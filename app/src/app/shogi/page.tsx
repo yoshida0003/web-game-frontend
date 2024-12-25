@@ -14,7 +14,7 @@ const ShogiPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/create-room",
+        "http://localhost:3002/api/create-room",
         { roomName, username }
       );
       const { roomId, userId } = response.data;
@@ -27,7 +27,7 @@ const ShogiPage = () => {
   const handleJoinRoom = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3001/api/join-room", {
+      const response = await axios.post("http://localhost:3002/api/join-room", {
         roomName,
         username,
       });

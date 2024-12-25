@@ -19,7 +19,7 @@ const ShogiGame = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3002/api/room/${roomId}`
+          `http://localhost:3001/api/room/${roomId}`
         );
         setUsers(response.data.users);
       } catch (error) {
@@ -47,7 +47,7 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`http://localhost:3002/api/leave-room`, {
+      await axios.post(`http://localhost:3001/api/leave-room`, {
         roomId,
         userId,
       });

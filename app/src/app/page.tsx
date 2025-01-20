@@ -2,8 +2,9 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div>
-      <Link href="/shogi">将棋ページ</Link>
+		<div className="grid row-span-1">
+      <p><Link href="/shogi">将棋ページ</Link></p>
+			<p><Link href="./ng-word">NGワードゲーム</Link></p>
     </div>
   );
 }

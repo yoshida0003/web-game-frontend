@@ -15,7 +15,7 @@ const ShogiPage = () => {
     try {
       const response = await axios.post(
         "http://localhost:3001/api/create-room",
-        { roomName, username }
+				{ roomName, username, gameType: "shogi" }
       );
       const { roomId, userId } = response.data;
       router.push(`/shogi-game/${roomId}?userId=${userId}`);
@@ -30,6 +30,7 @@ const ShogiPage = () => {
       const response = await axios.post("http://localhost:3001/api/join-room", {
         roomName,
         username,
+				gameType: "shogi"
       });
       const { roomId, userId } = response.data;
       router.push(`/shogi-game/${roomId}?userId=${userId}`);

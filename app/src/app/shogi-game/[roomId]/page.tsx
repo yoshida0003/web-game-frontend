@@ -37,8 +37,13 @@ const ShogiGame = () => {
 
 		// サーバーからの通知をリッスン
 		socket.on("user-joined", (user) => {
-			setUsers((prevUsers) => [...prevUsers, user]);
-		});
+      console.log("user-joined event received:", user); 
+      setUsers((prevUsers) => [
+        ...prevUsers,
+        { id: user.userId, username: user.username },
+      ]);
+      console.log(`${user.username}さんが入室しました。`);
+    });
 
 		socket.on("user-left", ({ userId, username }) => {
 			setUsers((prevUsers) =>
@@ -80,25 +85,26 @@ const ShogiGame = () => {
 	};
 
 	return (
-		<div className="container mx-auto p-4">
-			<h1 className="text-2xl font-bold mb-4">将棋ゲーム</h1>
-			<h2 className="text-xl mb-4">部屋ID: {roomId}</h2>
-			<h3 className="text-lg mb-4">参加者:</h3>
-			<ul className="list-disc pl-5">
-				{users.map((user) => (
-					<li key={user.id} className="mb-2">
-						{user.username} {user.id === userId && "(あなた)"}
-					</li>
-				))}
-			</ul>
-			<button
-				onClick={handleLeaveRoom}
-				className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-			>
-				退出
-			</button>
-		</div>
-	);
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">将棋ゲーム</h1>
+      <h2 className="text-xl mb-4">部屋ID: {roomId}</h2>
+      <h3 className="text-lg mb-4">参加者:</h3>
+      <ul className="list-disc pl-5">
+        {users.map((user) => (
+          <li key={user.id} className="mb-2">
+            {user.username} {user.id === userId && "(あなた)"}
+            <span> (ID: {user.id})</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={handleLeaveRoom}
+        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+      >
+        退出
+      </button>
+    </div>
+  );
 };
 
 export default ShogiGame;

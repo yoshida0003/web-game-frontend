@@ -5,59 +5,86 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("https://game.yospace.org/api");
+const socket = io("http://localhost:3001", {
+	withCredentials: true,
+	transports: ["websocket", "polling"],
+});
 
 const ShogiGame = () => {
-  const [users, setUsers] = useState<{ id: string; username: string }[]>([]);
-  const router = useRouter();
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const roomId = params.roomId as string;
-  const userId = searchParams.get("userId");
+	const [users, setUsers] = useState<{ id: string; username: string }[]>([]);
+	const router = useRouter();
+	const params = useParams();
+	const searchParams = useSearchParams();
+	const roomId = params.roomId as string;
+	const userId = searchParams.get("userId");
 
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        const response = await axios.get(
-          `https://game.yospace.org/api/room/${roomId}`
-        );
-        setUsers(response.data.users);
-      } catch (error) {
-        console.error("Error fetching room data:", error);
-      }
-    };
+	useEffect(() => {
+		const fetchRoomData = async () => {
+			try {
+				const response = await axios.get(
+					`http://localhost:3001/api/room/${roomId}`
+				);
+				setUsers(response.data.users);
+			} catch (error) {
+				console.error("Error fetching room data:", error);
+			}
+		};
 
-    fetchRoomData();
+		fetchRoomData();
 
-    socket.emit("join-room", roomId);
+		// サーバーに部屋への参加を通知
+		socket.emit("join-room", { roomId, userId, username: "YourUsername" });
 
-    socket.on("user-joined", (user) => {
-      setUsers((prevUsers) => [...prevUsers, user]);
+		// サーバーからの通知をリッスン
+		socket.on("user-joined", (user) => {
+      console.log("user-joined event received:", user); 
+      setUsers((prevUsers) => [
+        ...prevUsers,
+        { id: user.userId, username: user.username },
+      ]);
+      console.log(`${user.username}さんが入室しました。`);
     });
 
-    socket.on("user-left", ({ userId }) => {
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-    });
+		socket.on("user-left", ({ userId, username }) => {
+			setUsers((prevUsers) =>
+				prevUsers.filter((user) => user.id !== userId)
+			);
+			console.log(`${username}さんが退出しました。`);
+		});
 
-    return () => {
-      socket.off("user-joined");
-      socket.off("user-left");
-    };
-  }, [roomId]);
+		socket.on("room-deleted", () => {
+			alert("部屋が閉じられました");
+			router.push("/");
+		});
 
-  const handleLeaveRoom = async () => {
-    try {
-      await axios.post(`https://game.yospace.org/api/leave-room`, {
-        roomId,
-        userId,
-      });
-      router.push("/");
-    } catch (error) {
-      console.error("Error leaving room:", error);
-    }
-  };
+		// サーバーからのログをリッスン
+		socket.on("server-log", (message) => {
+			console.log(message);
+		});
 
-  return (
+		// クリーンアップ処理
+		return () => {
+			socket.off("user-joined");
+			socket.off("user-left");
+			socket.off("room-deleted");
+			socket.off("server-log");
+		};
+	}, [roomId, userId, router]);
+
+	const handleLeaveRoom = async () => {
+		try {
+			await axios.post(`http://localhost:3001/api/leave-room`, {
+				roomId,
+				userId,
+			});
+			socket.emit("leave-room", { roomId, userId, username: "YourUsername" }); // 退室イベントを送信
+			router.push("/");
+		} catch (error) {
+			console.error("Error leaving room:", error);
+		}
+	};
+
+	return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">将棋ゲーム</h1>
       <h2 className="text-xl mb-4">部屋ID: {roomId}</h2>
@@ -66,12 +93,13 @@ const ShogiGame = () => {
         {users.map((user) => (
           <li key={user.id} className="mb-2">
             {user.username} {user.id === userId && "(あなた)"}
+            <span> (ID: {user.id})</span>
           </li>
         ))}
       </ul>
       <button
         onClick={handleLeaveRoom}
-        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
       >
         退出
       </button>

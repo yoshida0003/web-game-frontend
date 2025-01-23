@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3001", {
+const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -22,7 +22,7 @@ const NGWordGamePage = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
       } catch (error) {
@@ -71,7 +71,7 @@ const NGWordGamePage = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/leave-room`, {
+      await axios.post(`https://game.yospace.org/api/leave-room`, {
         roomId,
         userId,
       });

@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("https://game.yospace.org/api", {
+const socket = io("https://game.yospace.org", {
   path: "/api/socket.io",
   withCredentials: true,
   transports: ["websocket", "polling"],

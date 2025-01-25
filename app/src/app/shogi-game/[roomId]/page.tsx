@@ -11,6 +11,7 @@ const socket = io("https://game.yospace.org/api", {
   reconnection: true, // 再接続を有効にする
   reconnectionAttempts: 5, // 再接続の試行回数
   reconnectionDelay: 1000, // 再接続の試行間隔（ミリ秒）
+  timeout: 10000,
 });
 
 const ShogiGame = () => {
@@ -34,6 +35,18 @@ const ShogiGame = () => {
     };
 
     fetchRoomData();
+
+    socket.on("connect_error", (error) => {
+      console.error("WebSocket connection error:", error);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.error("WebSocket disconnected:", reason);
+      if (reason === "io server disconnect") {
+        // サーバー側からの切断の場合は再接続を試みる
+        socket.connect();
+      }
+    });
 
     // サーバーに部屋への参加を通知
     socket.emit("join-room", { roomId, userId, username: "YourUsername" });

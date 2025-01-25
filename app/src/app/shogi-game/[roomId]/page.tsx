@@ -8,9 +8,9 @@ import io from "socket.io-client";
 const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket", "polling"],
-  reconnection: true, // 再接続を有効にする
-  reconnectionAttempts: 5, // 再接続の試行回数
-  reconnectionDelay: 1000, // 再接続の試行間隔（ミリ秒）
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
 });
 
 const ShogiGame = () => {
@@ -20,14 +20,21 @@ const ShogiGame = () => {
   const searchParams = useSearchParams();
   const roomId = params.roomId as string;
   const userId = searchParams.get("userId");
+  const [username, setUsername] = useState<string>("");
 
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `https://game.yospace.org/api/room/${roomId}` // http://localhost:3001/api/room/${roomId}
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
+        const currentUser = response.data.users.find(
+          (user: { id: string; username: string }) => user.id === userId
+        );
+        if (currentUser) {
+          setUsername(currentUser.username);
+        }
       } catch (error) {
         console.error("Error fetching room data:", error);
       }
@@ -35,10 +42,10 @@ const ShogiGame = () => {
 
     fetchRoomData();
 
-    // サーバーに部屋への参加を通知
-    socket.emit("join-room", { roomId, userId, username: "YourUsername" });
+    if (username) {
+      socket.emit("join-room", { roomId, userId, username });
+    }
 
-    // サーバーからの通知をリッスン
     socket.on("user-joined", (user) => {
       console.log("user-joined event received:", user);
       setUsers((prevUsers) => [
@@ -49,8 +56,8 @@ const ShogiGame = () => {
     });
 
     socket.on("user-left", ({ userId, username }) => {
-      console.log(`${username}さんが退出しました。`);
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      console.log(`${username}さんが退出しました。`);
     });
 
     socket.on("room-deleted", () => {
@@ -58,19 +65,17 @@ const ShogiGame = () => {
       router.push("/");
     });
 
-    // サーバーからのログをリッスン
     socket.on("server-log", (message) => {
       console.log(message);
     });
 
-    // クリーンアップ処理
     return () => {
       socket.off("user-joined");
       socket.off("user-left");
       socket.off("room-deleted");
       socket.off("server-log");
     };
-  }, [roomId, userId, router]);
+  }, [roomId, userId, username, router]);
 
   const handleLeaveRoom = async () => {
     try {
@@ -78,7 +83,7 @@ const ShogiGame = () => {
         roomId,
         userId,
       });
-      socket.emit("leave-room", { roomId, userId, username: "YourUsername" }); // 退室イベントを送信
+      socket.emit("leave-room", { roomId, userId, username });
       router.push("/");
     } catch (error) {
       console.error("Error leaving room:", error);

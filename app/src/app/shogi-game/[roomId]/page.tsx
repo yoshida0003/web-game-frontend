@@ -6,8 +6,11 @@ import axios from "axios";
 import io from "socket.io-client";
 
 const socket = io("http://localhost:3001", {
-	withCredentials: true,
-	transports: ["websocket", "polling"],
+  withCredentials: true,
+  transports: ["websocket", "polling"],
+  reconnection: true, // 再接続を有効にする
+  reconnectionAttempts: 5, // 再接続の試行回数
+  reconnectionDelay: 1000, // 再接続の試行間隔（ミリ秒）
 });
 
 const ShogiGame = () => {

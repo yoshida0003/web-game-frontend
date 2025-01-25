@@ -9,9 +9,26 @@ const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket"],
   reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000, // タイムアウトを20秒に設定
+  reconnectionAttempts: 30, // 再接続を10回試行
+  reconnectionDelay: 2000, // 再接続までの遅延時間を2秒に設定
+  timeout: 30000, // 接続タイムアウトを30秒に設定
+});
+
+// WebSocketエラーのハンドリング
+socket.on("connect_error", (error) => {
+  console.error("WebSocket connection error:", error.message);
+  alert("接続に失敗しました。再試行してください。");
+});
+
+// 再接続成功時のイベント
+socket.on("reconnect", (attemptNumber) => {
+  console.log(`WebSocket再接続成功 (試行回数: ${attemptNumber})`);
+});
+
+// 再接続失敗時の処理
+socket.on("reconnect_failed", () => {
+  console.error("再接続に失敗しました。");
+  alert("サーバーとの接続に失敗しました。ページをリロードしてください。");
 });
 
 const ShogiGame = () => {

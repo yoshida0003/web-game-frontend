@@ -5,12 +5,13 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("https://game.yospace.org", {
+const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket"],
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
+  timeout: 20000, // タイムアウトを20秒に設定
 });
 
 const ShogiGame = () => {
@@ -51,6 +52,14 @@ const ShogiGame = () => {
       console.error("WebSocket connection error:", error);
     });
 
+    socket.on("disconnect", (reason) => {
+      console.error("WebSocket disconnected:", reason);
+      if (reason === "io server disconnect") {
+        // サーバー側からの切断の場合は再接続を試みる
+        socket.connect();
+      }
+    });
+
     socket.on("user-joined", (user) => {
       console.log("user-joined event received:", user);
       setUsers((prevUsers) => [
@@ -76,6 +85,7 @@ const ShogiGame = () => {
 
     return () => {
       socket.off("connect_error");
+      socket.off("disconnect");
       socket.off("user-joined");
       socket.off("user-left");
       socket.off("room-deleted");

@@ -1,130 +1,116 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
+import io from "socket.io-client";
 
-const ShogiPage = () => {
-  const [username, setUsername] = useState<string>("");
-  const [roomName, setRoomName] = useState<string>("");
-  const [tab, setTab] = useState<"create" | "join">("create");
+const socket = io("http://localhost:3001", {
+  withCredentials: true,
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+});
+
+const ShogiGame = () => {
+  const [users, setUsers] = useState<{ id: string; username: string }[]>([]);
   const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const roomId = params.roomId as string;
+  const userId = searchParams.get("userId");
+  const [username, setUsername] = useState<string>("");
 
-  const handleCreateRoom = async (e: FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(
-        "https://game.yospace.org/api/create-room",
-				{ roomName, username, gameType: "shogi" }
-      );
-      const { roomId, userId } = response.data;
-      router.push(`/shogi-game/${roomId}?userId=${userId}`);
-    } catch (error) {
-      console.error("Error creating room:", error);
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/room/${roomId}`
+        );
+        setUsers(response.data.users);
+        const currentUser = response.data.users.find(
+          (user: { id: string; username: string }) => user.id === userId
+        );
+        if (currentUser) {
+          setUsername(currentUser.username);
+        }
+      } catch (error) {
+        console.error("Error fetching room data:", error);
+      }
+    };
+
+    fetchRoomData();
+
+    if (username) {
+      socket.emit("join-room", { roomId, userId, username });
     }
-  };
 
-  const handleJoinRoom = async (e: FormEvent) => {
-    e.preventDefault();
+    socket.on("user-joined", (user) => {
+      console.log("user-joined event received:", user);
+      setUsers((prevUsers) => [
+        ...prevUsers,
+        { id: user.userId, username: user.username },
+      ]);
+      console.log(`${user.username}さんが入室しました。`);
+    });
+
+    socket.on("user-left", ({ userId, username }) => {
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      console.log(`${username}さんが退出しました。`);
+    });
+
+    socket.on("room-deleted", () => {
+      alert("部屋が閉じられました");
+      router.push("/");
+    });
+
+    socket.on("server-log", (message) => {
+      console.log(message);
+    });
+
+    return () => {
+      socket.off("user-joined");
+      socket.off("user-left");
+      socket.off("room-deleted");
+      socket.off("server-log");
+    };
+  }, [roomId, userId, username, router]);
+
+  const handleLeaveRoom = async () => {
     try {
-      const response = await axios.post("https://game.yospace.org/api/join-room", {
-        roomName,
-        username,
-				gameType: "shogi"
+      await axios.post(`http://localhost:3001/api/leave-room`, {
+        roomId,
+        userId,
       });
-      const { roomId, userId } = response.data;
-      router.push(`/shogi-game/${roomId}?userId=${userId}`);
+      socket.emit("leave-room", { roomId, userId, username });
+      router.push("/");
     } catch (error) {
-      console.error("Error joining room:", error);
-      alert("部屋が見つかりません");
+      console.error("Error leaving room:", error);
     }
   };
 
   return (
     <div className="container mx-auto p-4">
-      <form className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          ユーザーネーム:
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </label>
-      </form>
-      <div className="mb-4">
-        <button
-          onClick={() => setTab("create")}
-          className={`mr-2 py-2 px-4 rounded ${
-            tab === "create"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          部屋を作る
-        </button>
-        <button
-          onClick={() => setTab("join")}
-          className={`py-2 px-4 rounded ${
-            tab === "join"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          部屋に参加する
-        </button>
-      </div>
-      {tab === "create" && (
-        <div>
-          <form
-            onSubmit={handleCreateRoom}
-            className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
-          >
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              部屋の名前を入力:
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-            </label>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              作成
-            </button>
-          </form>
-        </div>
-      )}
-      {tab === "join" && (
-        <div>
-          <form
-            onSubmit={handleJoinRoom}
-            className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
-          >
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              部屋の名前を入力:
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-            </label>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              参加
-            </button>
-          </form>
-        </div>
-      )}
+      <h1 className="text-2xl font-bold mb-4">将棋ゲーム</h1>
+      <h2 className="text-xl mb-4">部屋ID: {roomId}</h2>
+      <h3 className="text-lg mb-4">参加者:</h3>
+      <ul className="list-disc pl-5">
+        {users.map((user) => (
+          <li key={user.id} className="mb-2">
+            {user.username} {user.id === userId && "(あなた)"}
+            <span> (ID: {user.id})</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={handleLeaveRoom}
+        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+      >
+        退出
+      </button>
     </div>
   );
 };
 
-export default ShogiPage;
+export default ShogiGame;

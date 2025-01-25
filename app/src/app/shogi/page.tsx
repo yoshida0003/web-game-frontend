@@ -14,7 +14,7 @@ const ShogiPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://game.yospace.org/api/create-room",
+        "http://localhost:3001/api/create-room",
 				{ roomName, username, gameType: "shogi" }
       );
       const { roomId, userId } = response.data;
@@ -27,7 +27,7 @@ const ShogiPage = () => {
   const handleJoinRoom = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("https://game.yospace.org/api/join-room", {
+      const response = await axios.post("http://localhost:3001/api/join-room", {
         roomName,
         username,
 				gameType: "shogi"

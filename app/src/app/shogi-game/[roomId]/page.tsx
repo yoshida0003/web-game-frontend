@@ -9,7 +9,7 @@ const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket", "polling"],
   reconnection: true, // 再接続を有効にする
-  reconnectionAttempts: 30, // 再接続の試行回数
+  reconnectionAttempts: 5, // 再接続の試行回数
   reconnectionDelay: 1000, // 再接続の試行間隔（ミリ秒）
 });
 

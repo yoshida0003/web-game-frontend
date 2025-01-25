@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3001", {
+const socket = io("https://game.yospace.org/api", {
   withCredentials: true,
   transports: ["websocket", "polling"],
   reconnection: true,
@@ -34,6 +34,11 @@ const ShogiGame = () => {
         );
         if (currentUser) {
           setUsername(currentUser.username);
+          socket.emit("join-room", {
+            roomId,
+            userId,
+            username: currentUser.username,
+          });
         }
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -41,10 +46,6 @@ const ShogiGame = () => {
     };
 
     fetchRoomData();
-
-    if (username) {
-      socket.emit("join-room", { roomId, userId, username });
-    }
 
     socket.on("user-joined", (user) => {
       console.log("user-joined event received:", user);
@@ -75,7 +76,7 @@ const ShogiGame = () => {
       socket.off("room-deleted");
       socket.off("server-log");
     };
-  }, [roomId, userId, username, router]);
+  }, [roomId, userId, router]);
 
   const handleLeaveRoom = async () => {
     try {
@@ -114,4 +115,3 @@ const ShogiGame = () => {
 };
 
 export default ShogiGame;
-

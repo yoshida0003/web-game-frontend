@@ -55,11 +55,14 @@ const ShogiGame = () => {
     }
 
     socket.on("user-joined", (user) => {
-      console.log("user-joinedイベント受信:", user);
-      setUsers((prevUsers) => [
-        ...prevUsers,
-        { id: user.userId, username: user.username },
-      ]);
+      console.log("user-joined event received:", user);
+      setUsers((prevUsers) => {
+        // ユーザーIDが重複していないか確認
+        if (prevUsers.some((existingUser) => existingUser.id === user.userId)) {
+          return prevUsers;
+        }
+        return [...prevUsers, { id: user.userId, username: user.username }];
+      });
       console.log(`${user.username}さんが入室しました。`);
     });
 

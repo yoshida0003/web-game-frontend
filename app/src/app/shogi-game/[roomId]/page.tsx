@@ -34,6 +34,11 @@ const ShogiGame = () => {
         );
         if (currentUser) {
           setUsername(currentUser.username);
+          socket.emit("join-room", {
+            roomId,
+            userId,
+            username: currentUser.username,
+          });
         }
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -42,9 +47,9 @@ const ShogiGame = () => {
 
     fetchRoomData();
 
-    if (username) {
-      socket.emit("join-room", { roomId, userId, username });
-    }
+    socket.on("connect_error", (error) => {
+      console.error("WebSocket connection error:", error);
+    });
 
     socket.on("user-joined", (user) => {
       console.log("user-joined event received:", user);
@@ -70,12 +75,13 @@ const ShogiGame = () => {
     });
 
     return () => {
+      socket.off("connect_error");
       socket.off("user-joined");
       socket.off("user-left");
       socket.off("room-deleted");
       socket.off("server-log");
     };
-  }, [roomId, userId, username, router]);
+  }, [roomId, userId, router]);
 
   const handleLeaveRoom = async () => {
     try {

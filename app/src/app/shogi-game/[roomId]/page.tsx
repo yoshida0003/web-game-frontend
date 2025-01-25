@@ -26,7 +26,7 @@ const ShogiGame = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
         const currentUser = response.data.users.find(
@@ -79,7 +79,7 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/leave-room`, {
+      await axios.post(`https://game.yospace.org/api/leave-room`, {
         roomId,
         userId,
       });
@@ -114,3 +114,4 @@ const ShogiGame = () => {
 };
 
 export default ShogiGame;
+

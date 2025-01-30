@@ -42,17 +42,16 @@ const GamePage: React.FC<GamePageProps> = ({
 	// クライアント側で盤面を更新
 	useEffect(() => {
 		socket.on("update-board", ({ board, currentPlayer, logs }) => {
-			console.log("📢 update-board イベント受信:", { board, currentPlayer, logs });
-			setBoard(board);
-			setCurrentPlayer(currentPlayer);
-			setLogs(logs); // 🔥 ここでログも更新
+			console.log("📥 クライアントが update-board を受信: ", { board, currentPlayer, logs });
+			setBoard([...board]); // ✅ 盤面を更新
+			setCurrentPlayer(currentPlayer); // ✅ ターンを更新
+			setLogs([...logs]); // ✅ ログも更新
 		});
 
 		return () => {
 			socket.off("update-board");
 		};
-	}, [roomId, currentPlayer]);
-
+	}, [socket]);
 
 	// 駒の移動リクエスト
 	const movePiece = async (fromX: number, fromY: number, toX: number, toY: number) => {
@@ -64,7 +63,8 @@ const GamePage: React.FC<GamePageProps> = ({
 		const notation = getPositionNotation(toX, toY);
 
 		try {
-			const response = await axios.post(`http://localhost:3001/api/shogi/move-piece`, {
+			console.log(`🚀 movePiece: ${fromX},${fromY} -> ${toX},${toY}`);
+			const response = await axios.post("http://localhost:3001/api/shogi/move-piece", {
 				roomId,
 				userId,
 				fromX,
@@ -73,15 +73,15 @@ const GamePage: React.FC<GamePageProps> = ({
 				toY,
 				notation,
 			});
+			console.log("✅ movePiece API レスポンス:", response.data);
 
 			if (response.data.board) {
-				console.log("🛠 駒の移動成功:", response.data);
-				setBoard([...response.data.board]); // ✅ 即座に画面を更新
-				setLogs([...response.data.logs]); // ✅ ログも即座に更新
-				setCurrentPlayer(response.data.currentPlayer); // ✅ ターンも更新
+				setBoard([...response.data.board]);
+				setLogs([...response.data.logs]);
+				setCurrentPlayer(response.data.currentPlayer);
 			}
 		} catch (error) {
-			console.error("❌ Error moving piece:", error);
+			console.error("❌ movePiece エラー:", error);
 		}
 	};
 

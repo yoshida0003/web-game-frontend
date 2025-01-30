@@ -35,8 +35,13 @@ const ShogiPage = () => {
       const { roomId, userId } = response.data;
       router.push(`/shogi-game/${roomId}?userId=${userId}`);
     } catch (error) {
-      console.error("Error joining room:", error);
-      alert("部屋が見つかりません");
+      if (
+        axios.isAxiosError(error) && error.response && error.response.status === 403
+      ) {
+        alert("部屋がいっぱいです");
+      } else {
+        alert("部屋が見つかりません");
+      }
     }
   };
 

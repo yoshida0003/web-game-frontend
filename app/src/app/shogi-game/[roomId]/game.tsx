@@ -1,7 +1,5 @@
-import { useState } from "react";
 import axios from "axios";
-import { useDrag, useDrop, DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { JSX } from "react";
 
 interface GamePageProps {
   board: (string | null)[][];
@@ -20,144 +18,133 @@ const GamePage: React.FC<GamePageProps> = ({
   logs,
   currentPlayer,
 }) => {
-  // 駒の座標を将棋の座標（4五など）に変換
-  const getPositionNotation = (x: number, y: number): string => {
-    const cols = ["一", "二", "三", "四", "五", "六", "七", "八", "九"];
-    return `${9 - y}${cols[x]}`;
-  };
-  
+  interface ClickCellPayload {
+    roomId: string;
+    userId: string;
+    x: number;
+    y: number;
+  }
 
-  // 駒の移動リクエスト
-  const movePiece = async (
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number
-  ) => {
+  const handleClick = async (x: number, y: number): Promise<void> => {
     if (currentPlayer !== userId) {
       alert("相手のターンです！");
       return;
     }
 
-    const notation = getPositionNotation(toX, toY);
+    const payload: ClickCellPayload = {
+      roomId,
+      userId,
+      x,
+      y,
+    };
 
     try {
-      await axios.post(`http://localhost:3001/api/shogi/move-piece`, {
-        roomId,
-        userId,
-        fromX,
-        fromY,
-        toX,
-        toY,
-        notation,
-      });
+      await axios.post(`http://localhost:3001/api/shogi/click-cell`, payload);
     } catch (error) {
-      console.error("Error moving piece:", error);
+      console.error("Error clicking cell:", error);
     }
   };
-  
 
-  // 駒のコンポーネント
-  const Piece: React.FC<{ piece: string; x: number; y: number }> = ({
-    piece,
-    x,
-    y,
-  }) => {
-    const [{ isDragging }, drag] = useDrag({
-      type: "PIECE",
-      item: { x, y, piece },
-      collect: (monitor) => ({
-        isDragging: !!monitor.isDragging(),
-      }),
-    });
+  const firstRow = ["9", "8", "7", "6", "5", "4", "3", "2", "1"];
+  const firstCol = ["一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  const secondRow = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  const secondCol = ["九", "八", "七", "六", "五", "四", "三", "二", "一"];
 
-    return (
-      <div
-        ref={drag as unknown as React.Ref<HTMLDivElement>}
-        className={`cursor-grab ${isDragging ? "opacity-50" : ""}`}
-      >
-        <span className={piece === "P" ? "text-black" : "text-red-500"}>
-          {piece === "P" ? "先歩" : "後歩"}
-        </span>
-      </div>
-    );
-  };
+  const rowLabels = isFirstPlayer ? firstRow : secondRow;
+  const colLabels = isFirstPlayer ? firstCol : secondCol;
 
-  // マスのコンポーネント
-  const Square: React.FC<{ x: number; y: number; piece: string | null }> = ({
-    x,
-    y,
-    piece,
-  }) => {
-    const [{ isOver }, drop] = useDrop({
-      accept: "PIECE",
-      drop: (item: { x: number; y: number; piece: string }) => {
-        const { x: fromX, y: fromY, piece } = item;
-        const forwardX = isFirstPlayer ? fromX - 1 : fromX + 1;
+  // 後手なら盤面を反転
+  const displayedBoard = isFirstPlayer ? board : [...board].reverse();
 
-        if (x === forwardX && y === fromY) {
-          movePiece(fromX, fromY, x, y);
-        }
-      },
-      collect: (monitor) => ({
-        isOver: !!monitor.isOver(),
-      }),
-    });
-    
+  const renderPiece = (cell: string | null): JSX.Element | null => {
+    if (!cell) return null;
+
+    const pieceMap: { [key: string]: string } = {
+      P: "先歩",
+      p: "後歩",
+      L: "先香",
+      l: "後香",
+      N: "先桂",
+      n: "後桂",
+      S: "先銀",
+      s: "後銀",
+      G: "先金",
+      g: "後金",
+      B: "先角",
+      b: "後角",
+      R: "先飛",
+      r: "後飛",
+      K: "先王",
+      k: "後玉",
+    };
 
     return (
-      <div
-        ref={drop as unknown as React.Ref<HTMLDivElement>}
-        className={`flex items-center justify-center border border-gray-700 w-full h-full ${
-          isOver ? "bg-blue-300" : ""
-        }`}
+      <span
+        className={cell === cell.toUpperCase() ? "text-black" : "text-red-500"}
       >
-        {piece && <Piece piece={piece} x={x} y={y} />}
-      </div>
+        {pieceMap[cell] || cell}
+      </span>
     );
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
+    <div className="flex items-center">
       <div className="flex items-center">
         <div>
+          <div className="flex">
+            {rowLabels.map((rowNam, index) => (
+              <div
+                key={`row-${index}`}
+                className="w-16 h-16 flex items-center justify-center"
+              >
+                {rowNam}
+              </div>
+            ))}
+          </div>
           <div
             className="grid grid-cols-9 border border-gray-700"
             style={{
               backgroundColor: "#F9C270",
-              width: "36rem",
-              height: "36rem",
+              width: "36rem", // 全体の幅を指定（9×4rem = 36rem）
+              height: "36rem", // 高さも同じにする
             }}
           >
-            {board.map((row, rowIndex) =>
+            {displayedBoard.map((row, rowIndex) =>
               row.map((cell, colIndex) => (
-                <Square
+                <div
                   key={`${rowIndex}-${colIndex}`}
-                  x={rowIndex}
-                  y={colIndex}
-                  piece={cell}
-                />
+                  className="flex items-center justify-center border border-gray-700 cursor-pointer w-full h-full"
+                  onClick={() => handleClick(rowIndex, colIndex)}
+                >
+                  {renderPiece(cell)}
+                </div>
               ))
             )}
           </div>
         </div>
-
-        {/* ログエリア */}
-        <div className="ml-4">
-          <h3 className="mt-4">
-            {currentPlayer === userId
-              ? "あなたのターンです"
-              : "相手のターンです"}
-          </h3>
-          <h3>ログ</h3>
-          <ul>
-            {logs.map((log, index) => (
-              <li key={`${log}-${index}`}>{log}</li>
-            ))}
-          </ul>
+        <div className="flex flex-col mt-16">
+          {colLabels.map((ColNum, index) => (
+            <div
+              key={`col-${index}`}
+              className="w-16 h-16 flex items-center justify-center"
+            >
+              {ColNum}
+            </div>
+          ))}
         </div>
       </div>
-    </DndProvider>
+      <div className="ml-4">
+        <h3 className="mt-4">
+          {currentPlayer === userId ? "あなたのターンです" : "相手のターンです"}
+        </h3>
+        <h3>ログ</h3>
+        <ul>
+          {logs.map((log, index) => (
+            <li key={`${log}-${index}`}>{log}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };
 

@@ -14,7 +14,7 @@ const ShogiPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://game.yospace.org/api/create-room",
+        "http://localhost:3001/api/create-room",
 				{ roomName, username, gameType: "shogi" }
       );
       const { roomId, userId } = response.data;
@@ -27,7 +27,7 @@ const ShogiPage = () => {
   const handleJoinRoom = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("https://game.yospace.org/api/join-room", {
+      const response = await axios.post("http://localhost:3001/api/join-room", {
         roomName,
         username,
 				gameType: "shogi"
@@ -35,8 +35,13 @@ const ShogiPage = () => {
       const { roomId, userId } = response.data;
       router.push(`/shogi-game/${roomId}?userId=${userId}`);
     } catch (error) {
-      console.error("Error joining room:", error);
-      alert("部屋が見つかりません");
+      if (
+        axios.isAxiosError(error) && error.response && error.response.status === 403
+      ) {
+        alert("部屋がいっぱいです");
+      } else {
+        alert("部屋が見つかりません");
+      }
     }
   };
 

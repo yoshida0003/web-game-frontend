@@ -6,7 +6,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import GamePage from "./game";
 
-const socket = io("http://localhost:3001", {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -29,9 +29,15 @@ const ShogiGame = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
+        const currentUser = response.data.users.find(
+          (user: { id: string; username: string }) => user.id === userId
+        );
+        if (currentUser) {
+          setUsername(currentUser.username);
+        }
       } catch (error) {
         console.error("Error fetching room data:", error);
       }
@@ -40,7 +46,7 @@ const ShogiGame = () => {
     fetchRoomData();
 
     socket.emit("join-room", { roomId, userId, username: "YourUsername" });
-
+    
     socket.on("user-joined", (user) => {
       console.log("user-joined event received:", user);
       setUsers((prevUsers) => {
@@ -82,7 +88,7 @@ const ShogiGame = () => {
       socket.off("server-log");
       socket.off("game-started");
     };
-  }, [roomId, userId, router]);
+  }, [roomId, userId, username, router]);
 
   useEffect(() => {
     socket.on(
@@ -125,6 +131,7 @@ const ShogiGame = () => {
         roomId,
         userId,
       });
+
       socket.emit("leave-room", { roomId, userId, username: "YourUsername" });
       router.push("/");
     } catch (error) {

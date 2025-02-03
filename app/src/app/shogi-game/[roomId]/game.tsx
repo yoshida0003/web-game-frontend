@@ -246,7 +246,7 @@ const GamePage: React.FC<GamePageProps> = ({
 						))}
 					</div>
 				</div>
-
+				
         <div>
           {/* 行番号 (縦) */}
           <div className="flex ">
@@ -290,6 +290,7 @@ const GamePage: React.FC<GamePageProps> = ({
           </div>
         </div>
 
+
 				{/* 後手の駒台 */}
 				<div className="flex flex-col items-center ml-4">
 					<h3>後手の駒台</h3>
@@ -297,8 +298,8 @@ const GamePage: React.FC<GamePageProps> = ({
 						{capturedPieces.secondPlayer.map(({ piece, owner }, index) => (
 							<div
 								key={`secondPlayer-${index}`}
-								className={`w-8 h-8 flex items-center justify-center border border-gray-700 
-          ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
+								className={`w-8 h-8 flex items-center justify-center border border-gray-700 ${owner === "first" ? "bg-blue-200" : "bg-red-200"
+									}`}
 							>
 								{piece}
 							</div>

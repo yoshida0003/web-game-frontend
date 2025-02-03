@@ -3,6 +3,7 @@ import axios from "axios";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import io from "socket.io-client";
+import PromoteModal from "./promoteModal";
 
 const socket = io("http://localhost:3001", {
   withCredentials: true,
@@ -29,8 +30,19 @@ const GamePage: React.FC<GamePageProps> = ({
   const [board, setBoard] = useState(initialBoard);
   const [logs, setLogs] = useState(initialLogs);
   const [currentPlayer, setCurrentPlayer] = useState(initialCurrentPlayer);
-  const [capturedPieces, setCapturedPieces] = useState<{ firstPlayer: string[], secondPlayer: string[] }>({ firstPlayer: [], secondPlayer: [] }); // 駒台
+  const [capturedPieces, setCapturedPieces] = useState<{
+    firstPlayer: string[];
+    secondPlayer: string[];
+  }>({ firstPlayer: [], secondPlayer: [] }); // 駒台
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [promoteMove, setPromoteMove] = useState<{
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+  } | null>(null);
 
+  
   // 盤面のラベル（先手・後手で異なる）
   const rowLabels = isFirstPlayer
     ? ["一", "二", "三", "四", "五", "六", "七", "八", "九"]
@@ -41,35 +53,81 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // クライアント側で盤面を更新
   useEffect(() => {
-    socket.on("update-board", ({ board, currentPlayer, logs, capturedPieces }) => {
-      console.log("📥 クライアントが update-board を受信: ", {
-        board,
-        currentPlayer,
-        logs,
-        capturedPieces,
-      });
+    socket.on(
+      "update-board",
+      ({ board, currentPlayer, logs, capturedPieces }) => {
+        console.log("📥 クライアントが update-board を受信: ", {
+          board,
+          currentPlayer,
+          logs,
+          capturedPieces,
+        });
 
-      setBoard([...board]);
-      setCurrentPlayer(currentPlayer);
-      setLogs([...logs]);
-      setCapturedPieces(capturedPieces);
-    });
+        setBoard([...board]);
+        setCurrentPlayer(currentPlayer);
+        setLogs([...logs]);
+        setCapturedPieces(capturedPieces);
+      }
+    );
 
     return () => {
       socket.off("update-board");
     };
   }, [socket]);
 
+  // 成り判定
+  const shouldPromote = (piece: string, toX: number) => {
+    console.log(
+      `🧐 成り判定チェック: piece=${piece}, toX=${toX}, isFirstPlayer=${isFirstPlayer}`
+    );
+
+    if (piece.toUpperCase() === "K" || piece.toUpperCase() === "G") {
+      console.log("⚠️ 成れない駒なのでスキップ");
+      return false;
+    }
+
+    // 先手の成りゾーン ("一", "二", "三" → 0,1,2)
+    if (isFirstPlayer && toX <= 2) {
+      console.log("✅ 先手が成れる位置に移動");
+      return true;
+    }
+
+    // 後手の成りゾーン ("七", "八", "九" → 6,7,8)
+    if (!isFirstPlayer && toX >= 6) {
+      console.log("✅ 後手が成れる位置に移動");
+      return true;
+    }
+
+    console.log("❌ 成れない位置");
+    return false;
+  };
+
   // 駒の移動リクエスト
   const movePiece = async (
     fromX: number,
     fromY: number,
     toX: number,
-    toY: number
+    toY: number,
+    promote: boolean = false
   ) => {
     if (currentPlayer !== userId) {
       alert("相手のターンです！");
       return;
+    }
+
+    const piece = board[fromX][fromY];
+    if (!piece) return;
+
+    console.log(
+      `🚀 movePiece 実行: ${fromX},${fromY} -> ${toX},${toY}, piece=${piece}`
+    );
+
+    // **成り判定チェック**
+    if (shouldPromote(piece, toX) && !promote) {
+      console.log("🛑 成りのモーダルを表示");
+      setPromoteMove({ fromX, fromY, toX, toY });
+      setShowPromoteModal(true);
+      return; // ✅ 成りの確認をしたら、処理を中断する
     }
 
     // サーバーに送る座標（常に先手基準）
@@ -81,14 +139,17 @@ const GamePage: React.FC<GamePageProps> = ({
     // 移動先に自分の駒があるかチェック
     const targetPiece = board[toX][toY];
 
-    if (targetPiece && ((isFirstPlayer && targetPiece === targetPiece.toUpperCase()) || 
-      (!isFirstPlayer && targetPiece === targetPiece.toLowerCase()))) {
+    if (
+      targetPiece &&
+      ((isFirstPlayer && targetPiece === targetPiece.toUpperCase()) ||
+        (!isFirstPlayer && targetPiece === targetPiece.toLowerCase()))
+    ) {
       alert("自分の駒があります！");
       return;
     }
 
     console.log(
-      `🚀 movePiece 送信: ${actualFromX},${actualFromY} -> ${actualToX},${actualToY}`
+      `🚀 movePiece 送信: ${actualFromX},${actualFromY} -> ${actualToX},${actualToY}, promote=${promote}`
     );
 
     try {
@@ -101,16 +162,17 @@ const GamePage: React.FC<GamePageProps> = ({
           fromY: actualFromY,
           toX: actualToX,
           toY: actualToY,
+          promote,
         }
       );
 
-      console.log("movePiece API レスポンス:", response.data);
+      console.log("🎯 movePiece API レスポンス:", response.data);
 
       if (response.data.board) {
         setBoard([...response.data.board]);
         setLogs([...response.data.logs]);
         setCurrentPlayer(response.data.currentPlayer);
-        setCapturedPieces(response.data.capturedPieces); // 修正
+        setCapturedPieces(response.data.capturedPieces);
       }
     } catch (error) {
       if (
@@ -127,27 +189,66 @@ const GamePage: React.FC<GamePageProps> = ({
   };
 
   // 駒のコンポーネント
-  const Piece: React.FC<{ piece: string; x: number; y: number }> = ({
+  const Piece: React.FC<{
+    piece: string;
+    x: number;
+    y: number;
+    isSecondPlayer: boolean;
+  }> = ({
     piece,
     x,
     y,
+    isSecondPlayer, // ✅ 追加: プレイヤー情報
   }) => {
     const [{ isDragging }, drag] = useDrag({
       type: "PIECE",
-      item: { x, y, piece }, // ここで座標と駒の情報を渡す
+      item: { x, y, piece },
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging(),
       }),
     });
+
+    const pieceTypeMap: { [key: string]: string } = {
+      P: "pawn",
+      p: "pawn",
+      K: "king",
+      k: "king",
+      R: "rook",
+      r: "rook",
+      B: "bishop",
+      b: "bishop",
+      G: "gold",
+      g: "gold",
+      S: "silver",
+      s: "silver",
+      N: "knight",
+      n: "knight",
+      L: "lance",
+      l: "lance",
+      RP: "prom-pawn",
+      rp: "prom-pawn",
+    };
+
+    const pieceType = pieceTypeMap[piece];
+
+    // ✅ ここを修正: 後手 (`isSecondPlayer === true`) の場合、駒の所有者を逆にする
+    const isFirstPlayerPiece = piece === piece.toUpperCase();
+    const player = isSecondPlayer
+      ? isFirstPlayerPiece
+        ? "second" // 本来の先手の駒が、後手視点では相手の駒になる
+        : "first" // 本来の後手の駒が、後手視点では自分の駒になる
+      : isFirstPlayerPiece
+      ? "first"
+      : "second";
+
+    const pieceImage = `/image/${player}-${pieceType}.png`;
 
     return (
       <div
         ref={drag as unknown as React.Ref<HTMLDivElement>}
         className={`cursor-grab ${isDragging ? "opacity-50" : ""}`}
       >
-        <span className={piece === "P" ? "text-black" : "text-red-500"}>
-          {piece}
-        </span>
+        <img src={pieceImage} alt={pieceType} className="w-8 h-8" />
       </div>
     );
   };
@@ -187,11 +288,11 @@ const GamePage: React.FC<GamePageProps> = ({
     return (
       <div
         ref={drop as unknown as React.Ref<HTMLDivElement>}
-        className={`flex items-center justify-center border border-gray-700 w-full h-full ${
+        className={`flex items-center justify-center border border-gray-700 w-16 h-16 ${
           isOver ? "bg-blue-300" : ""
         }`}
       >
-        {piece && <Piece piece={piece} x={x} y={y} />}
+        {piece && <Piece piece={piece} x={x} y={y} isSecondPlayer={!isFirstPlayer} />}
       </div>
     );
   };
@@ -203,6 +304,39 @@ const GamePage: React.FC<GamePageProps> = ({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex items-center">
+        {/* 成りのモーダル */}
+        {/* 成りのモーダル */}
+        <PromoteModal
+          isOpen={showPromoteModal}
+          onRequestClose={() => setShowPromoteModal(false)}
+          onPromote={async () => {
+            if (promoteMove) {
+              console.log("✅ 成るを選択");
+              await movePiece(
+                promoteMove.fromX,
+                promoteMove.fromY,
+                promoteMove.toX,
+                promoteMove.toY,
+                true
+              );
+            }
+            setShowPromoteModal(false);
+          }}
+          onNotPromote={async () => {
+            if (promoteMove) {
+              console.log("✅ 成らないを選択");
+              await movePiece(
+                promoteMove.fromX,
+                promoteMove.fromY,
+                promoteMove.toX,
+                promoteMove.toY,
+                false
+              );
+            }
+            setShowPromoteModal(false);
+          }}
+        />
+
         {/* 先手の駒台 */}
         <div className="flex flex-col items-center mr-4">
           <h3>先手の駒台</h3>

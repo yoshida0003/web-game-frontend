@@ -16,9 +16,9 @@ const NGWordGame = () => {
 		e.preventDefault();
 		try {
 			const response = await axios.post(
-				"http://localhost:3001/create-room",
-				{ roomName, username, gameType: "ng-word" } // gameTypeを追加
-			);
+        "https://game.yospace.org/api/create-room",
+        { roomName, username, gameType: "ng-word" } // gameTypeを追加
+      );
 			const { roomId, userId } = response.data;
 			router.push(`/ng-word-game/${roomId}?userId=${userId}`);
 		} catch (error) {
@@ -30,9 +30,9 @@ const NGWordGame = () => {
 		e.preventDefault();
 		try {
 			const response = await axios.post(
-				"http://localhost:3001/join-room",
-				{ roomName, username, gameType: "ng-word" } // gameTypeを追加
-			);
+        "https://game.yospace.org/api/join-room",
+        { roomName, username, gameType: "ng-word" } // gameTypeを追加
+      );
 			const { roomId, userId } = response.data;
 			router.push(`/ng-word-game/${roomId}?userId=${userId}`);
 		} catch (error) {

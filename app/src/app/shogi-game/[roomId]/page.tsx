@@ -121,10 +121,10 @@ const ShogiGame = () => {
 
 	const handleLeaveRoom = async () => {
 		try {
-			await axios.post(`http://localhost:3001/api/leave-room`, {
-				roomId,
-				userId,
-			});
+			await axios.post(`https://game.yospace.org/api/leave-room`, {
+        roomId,
+        userId,
+      });
 			socket.emit("leave-room", { roomId, userId, username: "YourUsername" });
 			router.push("/");
 		} catch (error) {

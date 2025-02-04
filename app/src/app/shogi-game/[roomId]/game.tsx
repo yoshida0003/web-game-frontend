@@ -171,17 +171,17 @@ const GamePage: React.FC<GamePageProps> = ({
 
 		try {
 			const response = await axios.post(
-				"http://localhost:3001/api/shogi/move-piece",
-				{
-					roomId,
-					userId,
-					fromX: actualFromX,
-					fromY: actualFromY,
-					toX: actualToX,
-					toY: actualToY,
-					promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
-				}
-			);
+        "https://game.yospace.org/api/shogi/move-piece",
+        {
+          roomId,
+          userId,
+          fromX: actualFromX,
+          fromY: actualFromY,
+          toX: actualToX,
+          toY: actualToY,
+          promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
+        }
+      );
 
 			console.log("🎯 movePiece API レスポンス:", response.data);
 

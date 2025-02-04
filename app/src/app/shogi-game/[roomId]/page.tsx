@@ -6,9 +6,9 @@ import axios from "axios";
 import io from "socket.io-client";
 import GamePage from "./game";
 
-const socket = io("http://localhost:3001", {
-	withCredentials: true,
-	transports: ["websocket", "polling"],
+const socket = io("wss://game.yospace.org", {
+  withCredentials: true,
+  transports: ["websocket", "polling"],
 });
 
 const ShogiGame = () => {
@@ -29,8 +29,8 @@ const ShogiGame = () => {
 		const fetchRoomData = async () => {
 			try {
 				const response = await axios.get(
-					`http://localhost:3001/api/room/${roomId}`
-				);
+          `https://game.yospace.org/api/room/${roomId}`
+        );
 				setUsers(response.data.users);
 			} catch (error) {
 				console.error("Error fetching room data:", error);

@@ -6,7 +6,7 @@ import io from "socket.io-client";
 import PromoteModal from "./promoteModal";
 import Square from "./square";
 
-const socket = io("http://localhost:3001", {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });

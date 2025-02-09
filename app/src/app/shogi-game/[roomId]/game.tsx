@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useDrag, useDrop, DndProvider } from "react-dnd";
+import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import io from "socket.io-client";
 import PromoteModal from "./promoteModal";
@@ -31,13 +31,13 @@ const GamePage: React.FC<GamePageProps> = ({
   const [board, setBoard] = useState(initialBoard);
   const [logs, setLogs] = useState(initialLogs);
   const [currentPlayer, setCurrentPlayer] = useState(initialCurrentPlayer);
-	const [capturedPieces, setCapturedPieces] = useState<{
-		firstPlayer: { piece: string; owner: "first" | "second" }[];
-		secondPlayer: { piece: string; owner: "first" | "second" }[];
-	}>({
-		firstPlayer: [],
-		secondPlayer: [],
-	});
+  const [capturedPieces, setCapturedPieces] = useState<{
+    firstPlayer: { piece: string; owner: "first" | "second" }[];
+    secondPlayer: { piece: string; owner: "first" | "second" }[];
+  }>({
+    firstPlayer: [],
+    secondPlayer: [],
+  });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [promoteMove, setPromoteMove] = useState<{
     fromX: number;
@@ -46,7 +46,29 @@ const GamePage: React.FC<GamePageProps> = ({
     toY: number;
   } | null>(null);
 
-  
+  // 駒の種類を取得する関数
+  const getPieceType = (piece: string) => {
+    const pieceTypeMap: { [key: string]: string } = {
+      P: "歩",
+      p: "歩",
+      K: "王",
+      k: "王",
+      R: "飛",
+      r: "飛",
+      B: "角",
+      b: "角",
+      G: "金",
+      g: "金",
+      S: "銀",
+      s: "銀",
+      N: "桂",
+      n: "桂",
+      L: "香",
+      l: "香",
+    };
+    return pieceTypeMap[piece] || piece;
+  };
+
   // 盤面のラベル（先手・後手で異なる）
   const rowLabels = isFirstPlayer
     ? ["一", "二", "三", "四", "五", "六", "七", "八", "九"]
@@ -55,7 +77,6 @@ const GamePage: React.FC<GamePageProps> = ({
     ? ["9", "8", "7", "6", "5", "4", "3", "2", "1"]
     : ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-  // クライアント側で盤面を更新
   useEffect(() => {
     socket.on(
       "update-board",
@@ -70,16 +91,12 @@ const GamePage: React.FC<GamePageProps> = ({
         setBoard([...board]);
         setCurrentPlayer(currentPlayer);
         setLogs([...logs]);
-				setCapturedPieces({
-					firstPlayer: capturedPieces.firstPlayer.map((p: string) => ({
-						piece: p,
-						owner: "first",
-					})),
-					secondPlayer: capturedPieces.secondPlayer.map((p: string) => ({
-						piece: p,
-						owner: "second",
-					})),
-				});
+
+        // 🔹 サーバーから送られた capturedPieces をそのまま利用
+        setCapturedPieces({
+          firstPlayer: capturedPieces.firstPlayer, // 先手が取った駒
+          secondPlayer: capturedPieces.secondPlayer, // 後手が取った駒
+        });
       }
     );
 
@@ -88,122 +105,139 @@ const GamePage: React.FC<GamePageProps> = ({
     };
   }, [socket]);
 
-	// 成り判定
-	const shouldPromote = (piece: string, toX: number) => {
-		console.log(`🧐 成り判定チェック: piece=${piece}, toX=${toX}, isFirstPlayer=${isFirstPlayer}`);
+  // 成り判定
+  const shouldPromote = (piece: string, toX: number) => {
+    console.log(
+      `🧐 成り判定チェック: piece=${piece}, toX=${toX}, isFirstPlayer=${isFirstPlayer}`
+    );
 
-		if (piece === "K" || piece === "G" || piece === "RP" || piece === "rp") {
-			console.log("⚠️ 成れない駒なのでスキップ");
-			return false;
-		}
+    if (piece === "K" || piece === "G" || piece === "PP" || piece === "pp" || piece === "PR" || 
+        piece === "rp") {
+      console.log("⚠️ 成れない駒なのでスキップ");
+      return false;
+    }
 
-		// 先手の成りゾーン ("一", "二", "三" → 0,1,2)
-		if (isFirstPlayer && toX <= 2) {
-			console.log("✅ 先手が成れる位置に移動");
-			return true;
-		}
+    // 先手の成りゾーン ("一", "二", "三" → 0,1,2)
+    if (isFirstPlayer && toX <= 2) {
+      console.log("✅ 先手が成れる位置に移動");
+      return true;
+    }
 
-		// 後手の成りゾーン ("七", "八", "九" → 6,7,8)
-		if (!isFirstPlayer && toX >= 6) {
-			console.log("✅ 後手が成れる位置に移動");
-			return true;
-		}
+    // 後手の成りゾーン ("七", "八", "九" → 6,7,8)
+    if (!isFirstPlayer && toX >= 6) {
+      console.log("✅ 後手が成れる位置に移動");
+      return true;
+    }
 
-		console.log("❌ 成れない位置");
-		return false;
-	};
+    console.log("❌ 成れない位置");
+    return false;
+  };
 
-	// 駒の移動リクエスト
-	const movePiece = async (
-		fromX: number,
-		fromY: number,
-		toX: number,
-		toY: number,
-		promote: boolean | null = null // 🚀 null を許可することで初回の成り確認を判別
-	) => {
-		if (currentPlayer !== userId) {
-			alert("相手のターンです！");
-			return;
-		}
+  // 駒の移動リクエスト
+  const movePiece = async (
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    promote: boolean | null = null // 🚀 null を許可することで初回の成り確認を判別
+  ) => {
+    if (currentPlayer !== userId) {
+      alert("相手のターンです！");
+      return;
+    }
 
-		const piece = board[fromX][fromY];
-		if (!piece) return;
+    const piece = board[fromX][fromY];
+    if (!piece) return;
 
-		console.log(`🚀 movePiece 実行: ${fromX},${fromY} -> ${toX},${toY}, piece=${piece}`);
+    // ✅ 小文字の駒は全て後手の駒と判定
+    const isOwnPiece =
+      (isFirstPlayer && piece === piece.toUpperCase()) || // 先手の駒（大文字）
+      (!isFirstPlayer && piece === piece.toLowerCase()); // 後手の駒（小文字 & 成り駒）
 
-		// **成り判定チェック**
-		if (promote === null && shouldPromote(piece, toX)) {
-			console.log("🛑 成りのモーダルを表示");
-			setPromoteMove({ fromX, fromY, toX, toY });
-			setShowPromoteModal(true);
-			return; // ✅ 初回の成り確認で処理を中断
-		}
+    if (!isOwnPiece) {
+      alert("相手の駒は動かせません！");
+      return;
+    }
 
-		// サーバーに送る座標（常に先手基準）
-		const actualFromX = isFirstPlayer ? fromX : 8 - fromX;
-		const actualFromY = isFirstPlayer ? fromY : 8 - fromY;
-		const actualToX = isFirstPlayer ? toX : 8 - toX;
-		const actualToY = isFirstPlayer ? toY : 8 - toY;
+    console.log(
+      `🚀 movePiece 実行: ${fromX},${fromY} -> ${toX},${toY}, piece=${piece}`
+    );
 
-		// 移動先に自分の駒があるかチェック
-		const targetPiece = board[toX][toY];
+    // **成り判定チェック**
+    if (promote === null && shouldPromote(piece, toX)) {
+      console.log("🛑 成りのモーダルを表示");
+      setPromoteMove({ fromX, fromY, toX, toY });
+      setShowPromoteModal(true);
+      return; // ✅ 初回の成り確認で処理を中断
+    }
 
-		if (targetPiece) {
-			if (
-				(isFirstPlayer && targetPiece === targetPiece.toLowerCase()) ||
-				(!isFirstPlayer && targetPiece === targetPiece.toUpperCase())
-			) {
-				const capturedPiece = targetPiece.toUpperCase(); // 取られた駒は大文字に統一
-				const owner = isFirstPlayer ? "first" : "second"; // 取った側の所有者を記録
+    // サーバーに送る座標（常に先手基準）
+    const actualFromX = isFirstPlayer ? fromX : 8 - fromX;
+    const actualFromY = isFirstPlayer ? fromY : 8 - fromY;
+    const actualToX = isFirstPlayer ? toX : 8 - toX;
+    const actualToY = isFirstPlayer ? toY : 8 - toY;
 
-				setCapturedPieces((prev) => ({
-					firstPlayer: isFirstPlayer
-						? [...prev.firstPlayer, { piece: capturedPiece, owner }]
-						: [...prev.firstPlayer], // 後手が取った場合は変更なし
-					secondPlayer: !isFirstPlayer
-						? [...prev.secondPlayer, { piece: capturedPiece, owner }]
-						: [...prev.secondPlayer], // 先手が取った場合は変更なし
-				}));
-			}
-		}
+    // 移動先に自分の駒があるかチェック
+    const targetPiece = board[toX][toY];
 
-		console.log(`🚀 movePiece 送信: ${actualFromX},${actualFromY} -> ${actualToX},${actualToY}, 成り=${promote}`);
+    if (targetPiece) {
+      if (
+        (isFirstPlayer && targetPiece === targetPiece.toLowerCase()) ||
+        (!isFirstPlayer && targetPiece === targetPiece.toUpperCase())
+      ) {
+        const capturedPiece = targetPiece.toUpperCase(); // 取られた駒は大文字に統一
+        const owner = isFirstPlayer ? "first" : "second"; // 取った側の所有者を記録
 
-		try {
-			const response = await axios.post(
-				"http://localhost:3001/api/shogi/move-piece",
-				{
-					roomId,
-					userId,
-					fromX: actualFromX,
-					fromY: actualFromY,
-					toX: actualToX,
-					toY: actualToY,
-					promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
-				}
-			);
+        setCapturedPieces((prev) => ({
+          firstPlayer: isFirstPlayer
+            ? [...prev.firstPlayer, { piece: capturedPiece, owner }]
+            : [...prev.firstPlayer], // 後手が取った場合は変更なし
+          secondPlayer: !isFirstPlayer
+            ? [...prev.secondPlayer, { piece: capturedPiece, owner }]
+            : [...prev.secondPlayer], // 先手が取った場合は変更なし
+        }));
+      }
+    }
 
-			console.log("🎯 movePiece API レスポンス:", response.data);
+    console.log(
+      `🚀 movePiece 送信: ${actualFromX},${actualFromY} -> ${actualToX},${actualToY}, 成り=${promote}`
+    );
 
-			if (response.data.board) {
-				setBoard([...response.data.board]);
-				setLogs([...response.data.logs]);
-				setCurrentPlayer(response.data.currentPlayer);
-				setCapturedPieces(response.data.capturedPieces);
-			}
-		} catch (error) {
-			if (
-				axios.isAxiosError(error) &&
-				error.response &&
-				error.response.data &&
-				error.response.data.message
-			) {
-				alert(error.response.data.message); // サーバーからのエラーメッセージを表示
-			} else {
-				alert("駒の移動中にエラーが発生しました");
-			}
-		}
-	};
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/shogi/move-piece",
+        {
+          roomId,
+          userId,
+          fromX: actualFromX,
+          fromY: actualFromY,
+          toX: actualToX,
+          toY: actualToY,
+          promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
+        }
+      );
+
+      console.log("🎯 movePiece API レスポンス:", response.data);
+
+      if (response.data.board) {
+        setBoard([...response.data.board]);
+        setLogs([...response.data.logs]);
+        setCurrentPlayer(response.data.currentPlayer);
+        setCapturedPieces(response.data.capturedPieces);
+      }
+    } catch (error) {
+      if (
+        axios.isAxiosError(error) &&
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message); // サーバーからのエラーメッセージを表示
+      } else {
+        alert("駒の移動中にエラーが発生しました");
+      }
+    }
+  };
 
   const displayedBoard = isFirstPlayer
     ? board
@@ -213,40 +247,53 @@ const GamePage: React.FC<GamePageProps> = ({
     <DndProvider backend={HTML5Backend}>
       <div className="flex items-center">
         {/* 成りのモーダル */}
-				<PromoteModal
-					isOpen={showPromoteModal}
-					onRequestClose={() => setShowPromoteModal(false)}
-					onPromote={async () => {
-						if (promoteMove) {
-							console.log("✅ 成るを選択");
-							await movePiece(promoteMove.fromX, promoteMove.fromY, promoteMove.toX, promoteMove.toY, true);
-						}
-						setShowPromoteModal(false);
-					}}
-					onNotPromote={async () => {
-						if (promoteMove) {
-							console.log("✅ 成らないを選択");
-							await movePiece(promoteMove.fromX, promoteMove.fromY, promoteMove.toX, promoteMove.toY, false); // 🚀 修正: ここで false を送る
-						}
-						setShowPromoteModal(false);
-					}}
-				/>
-				{/* 先手の駒台 */}
-				<div className="flex flex-col items-center mr-4">
-					<h3>先手の駒台</h3>
-					<div className="grid grid-cols-3 gap-2">
-						{capturedPieces.firstPlayer.map(({ piece, owner }, index) => (
-							<div
-								key={`firstPlayer-${index}`}
-								className={`w-8 h-8 flex items-center justify-center border border-gray-700 
-          ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
-							>
-								{piece}
-							</div>
-						))}
-					</div>
-				</div>
-				
+        <PromoteModal
+          isOpen={showPromoteModal}
+          onRequestClose={() => setShowPromoteModal(false)}
+          onPromote={async () => {
+            if (promoteMove) {
+              console.log("✅ 成るを選択");
+              await movePiece(
+                promoteMove.fromX,
+                promoteMove.fromY,
+                promoteMove.toX,
+                promoteMove.toY,
+                true
+              );
+            }
+            setShowPromoteModal(false);
+          }}
+          onNotPromote={async () => {
+            if (promoteMove) {
+              console.log("✅ 成らないを選択");
+              await movePiece(
+                promoteMove.fromX,
+                promoteMove.fromY,
+                promoteMove.toX,
+                promoteMove.toY,
+                false
+              ); // 🚀 修正: ここで false を送る
+            }
+            setShowPromoteModal(false);
+          }}
+        />
+
+        {/* 先手の駒台 */}
+        <div className="flex flex-col items-center mr-4">
+          <h3>先手の駒台</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {capturedPieces.firstPlayer.map(({ piece, owner }, index) => (
+              <div
+                key={`firstPlayer-${index}`}
+                className={`w-8 h-8 flex items-center justify-center border border-gray-700 
+                ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
+              >
+                {getPieceType(piece)}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div>
           {/* 行番号 (縦) */}
           <div className="flex ">
@@ -262,20 +309,20 @@ const GamePage: React.FC<GamePageProps> = ({
 
           {/* 盤面 */}
           <div className="flex">
-						<div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
-							{displayedBoard.map((row, rowIndex) =>
-								row.map((cell, colIndex) => (
-									<Square
-										key={`${rowIndex}-${colIndex}`}
-										x={rowIndex}
-										y={colIndex}
-										piece={cell}
-										movePiece={movePiece}
-										isFirstPlayer={isFirstPlayer}
-									/>
-								))
-							)}
-						</div>
+            <div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
+              {displayedBoard.map((row, rowIndex) =>
+                row.map((cell, colIndex) => (
+                  <Square
+                    key={`${rowIndex}-${colIndex}`}
+                    x={rowIndex}
+                    y={colIndex}
+                    piece={cell}
+                    movePiece={movePiece}
+                    isFirstPlayer={isFirstPlayer}
+                  />
+                ))
+              )}
+            </div>
 
             <div className="flex flex-col">
               {rowLabels.map((row, index) => (
@@ -290,22 +337,21 @@ const GamePage: React.FC<GamePageProps> = ({
           </div>
         </div>
 
-
-				{/* 後手の駒台 */}
-				<div className="flex flex-col items-center ml-4">
-					<h3>後手の駒台</h3>
-					<div className="grid grid-cols-3 gap-2">
-						{capturedPieces.secondPlayer.map(({ piece, owner }, index) => (
-							<div
-								key={`secondPlayer-${index}`}
-								className={`w-8 h-8 flex items-center justify-center border border-gray-700 ${owner === "first" ? "bg-blue-200" : "bg-red-200"
-									}`}
-							>
-								{piece}
-							</div>
-						))}
-					</div>
-				</div>
+        {/* 後手の駒台 */}
+        <div className="flex flex-col items-center ml-4">
+          <h3>後手の駒台</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {capturedPieces.secondPlayer.map(({ piece, owner }, index) => (
+              <div
+                key={`secondPlayer-${index}`}
+                className={`w-8 h-8 flex items-center justify-center border border-gray-700 
+                ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
+              >
+                {getPieceType(piece)}
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* ログエリア */}
         <div className="ml-4">

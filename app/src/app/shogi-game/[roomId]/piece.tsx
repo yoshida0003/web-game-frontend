@@ -33,8 +33,18 @@ const Piece: React.FC<PieceProps> = ({ piece, x, y, isSecondPlayer }) => {
 		n: "knight",
 		L: "lance",
 		l: "lance",
-		RP: "prom-pawn",
-		rp: "prom-pawn",
+		PP: "prom-pawn",
+		pp: "prom-pawn",
+		PR: "prom-rook",
+		pr: "prom-rook",
+    PB: "prom-bishop",
+    pb: "prom-bishop",
+    PS: "prom-silver",
+		ps: "prom-silver",
+    PK: "prom-knight",
+    pk: "prom-knight",
+    PL: "prom-lance",
+    Pl: "prom-lance",
 	};
 
 	const pieceType = pieceTypeMap[piece];

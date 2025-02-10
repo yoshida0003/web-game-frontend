@@ -39,7 +39,7 @@ const Square: React.FC<SquareProps> = ({ x, y, piece, isFirstPlayer, movePiece }
 			className={`flex items-center justify-center border border-gray-700 w-16 h-16 ${isOver ? "bg-blue-300" : ""
 				}`}
 		>
-			{piece && <Piece piece={piece} x={x} y={y} isSecondPlayer={!isFirstPlayer} />}
+			{piece && <Piece piece={piece} x={x} y={y} isSecondPlayer={!isFirstPlayer} isFirstPlayer={isFirstPlayer} />}
 		</div>
 	);
 };

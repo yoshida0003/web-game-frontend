@@ -5,6 +5,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import io from "socket.io-client";
 import PromoteModal from "./promoteModal";
 import Square from "./square";
+import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネントのインポート
 
 const socket = io("http://localhost:3001", {
   withCredentials: true,
@@ -111,8 +112,14 @@ const GamePage: React.FC<GamePageProps> = ({
       `🧐 成り判定チェック: piece=${piece}, toX=${toX}, isFirstPlayer=${isFirstPlayer}`
     );
 
-    if (piece === "K" || piece === "G" || piece === "PP" || piece === "pp" || piece === "PR" || 
-        piece === "rp") {
+    if (
+      piece === "K" ||
+      piece === "G" ||
+      piece === "PP" ||
+      piece === "pp" ||
+      piece === "PR" ||
+      piece === "rp"
+    ) {
       console.log("⚠️ 成れない駒なのでスキップ");
       return false;
     }
@@ -277,21 +284,13 @@ const GamePage: React.FC<GamePageProps> = ({
             setShowPromoteModal(false);
           }}
         />
-
         {/* 先手の駒台 */}
         <div className="flex flex-col items-center mr-4">
           <h3>先手の駒台</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {capturedPieces.firstPlayer.map(({ piece, owner }, index) => (
-              <div
-                key={`firstPlayer-${index}`}
-                className={`w-8 h-8 flex items-center justify-center border border-gray-700 
-                ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
-              >
-                {getPieceType(piece)}
-              </div>
-            ))}
-          </div>
+          <CapturedPieces
+            capturedPieces={capturedPieces.firstPlayer}
+            isFirstPlayer={isFirstPlayer}
+          />
         </div>
 
         <div>
@@ -340,17 +339,10 @@ const GamePage: React.FC<GamePageProps> = ({
         {/* 後手の駒台 */}
         <div className="flex flex-col items-center ml-4">
           <h3>後手の駒台</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {capturedPieces.secondPlayer.map(({ piece, owner }, index) => (
-              <div
-                key={`secondPlayer-${index}`}
-                className={`w-8 h-8 flex items-center justify-center border border-gray-700 
-                ${owner === "first" ? "bg-blue-200" : "bg-red-200"}`}
-              >
-                {getPieceType(piece)}
-              </div>
-            ))}
-          </div>
+          <CapturedPieces
+            capturedPieces={capturedPieces.secondPlayer}
+            isFirstPlayer={!isFirstPlayer}
+          />
         </div>
 
         {/* ログエリア */}

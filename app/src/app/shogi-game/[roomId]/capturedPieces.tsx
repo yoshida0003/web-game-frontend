@@ -25,6 +25,8 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({
             y={0}
             isSecondPlayer={!isFirstPlayer}
             isFirstPlayer={isFirstPlayer}
+            fromCaptured={true} // 駒台からの駒であることを示す
+            capturedIndex={index} // 駒台のインデックス
           />
         </div>
       ))}

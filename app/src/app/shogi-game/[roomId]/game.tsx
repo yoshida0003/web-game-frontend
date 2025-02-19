@@ -153,7 +153,14 @@ const GamePage: React.FC<GamePageProps> = ({
       return;
     }
 
-    const piece = board[fromX][fromY];
+    let piece = board[fromX]?.[fromY];
+    if (fromX === 9 || fromX === 10) {
+      // 駒台からの駒の場合
+      const capturedPiecesList =
+        fromX === 9 ? capturedPieces.firstPlayer : capturedPieces.secondPlayer;
+      piece = capturedPiecesList[fromY]?.piece;
+    }
+
     if (!piece) return;
 
     // ✅ 小文字の駒は全て後手の駒と判定

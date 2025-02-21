@@ -6,7 +6,12 @@ interface SquareProps {
   y: number;
   piece: string | null;
   isFirstPlayer: boolean;
-  movePiece: (fromX: number, fromY: number, toX: number, toY: number) => void;
+  movePiece: (
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number
+  ) => Promise<void>;
 }
 
 const Square: React.FC<SquareProps> = ({
@@ -18,7 +23,7 @@ const Square: React.FC<SquareProps> = ({
 }) => {
   const [{ isOver }, drop] = useDrop({
     accept: "PIECE",
-    drop: (item: {
+    drop: async (item: {
       x: number;
       y: number;
       piece: string;
@@ -42,7 +47,7 @@ const Square: React.FC<SquareProps> = ({
       }
 
       console.log(`🎯 ドロップ: (${fromX},${fromY}) → (${targetX},${targetY})`);
-      movePiece(fromX, fromY, targetX, targetY);
+      await movePiece(fromX, fromY, targetX, targetY);
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),

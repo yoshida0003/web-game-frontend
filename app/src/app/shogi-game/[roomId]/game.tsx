@@ -84,30 +84,50 @@ const GamePage: React.FC<GamePageProps> = ({
   }, [socket]);
 
   // 成り判定
-  const shouldPromote = (piece: string, toX: number) => {
+  const shouldPromote = (piece: string, toX: number, fromCaptured: boolean) => {
     console.log(
-      `🧐 成り判定チェック: piece=${piece}, toX=${toX}, isFirstPlayer=${isFirstPlayer}`
+      `🧐 成り判定チェック: piece=${piece}, toX=${toX}, fromCaptured=${fromCaptured}, isFirstPlayer=${isFirstPlayer}`
     );
 
-    if (
-      piece === "K" ||
-      piece === "G" ||
-      piece === "PP" ||
-      piece === "pp" ||
-      piece === "PR" ||
-      piece === "rp"
-    ) {
+    // **駒台から打つ駒は成れない**
+    if (fromCaptured) {
+      console.log("⚠️ 駒台から打つ駒なのでスキップ");
+      return false;
+    }
+
+    // **すでに成り駒ならモーダル不要**
+    const promotedPieces = [
+      "PP",
+      "pp",
+      "PR",
+      "pr",
+      "PB",
+      "pb",
+      "PS",
+      "ps",
+      "PN",
+      "pn",
+      "PL",
+      "pl",
+    ];
+    if (promotedPieces.includes(piece)) {
+      console.log("⚠️ すでに成っている駒なのでスキップ");
+      return false;
+    }
+
+    // **成れない駒**
+    if (["K", "G"].includes(piece)) {
       console.log("⚠️ 成れない駒なのでスキップ");
       return false;
     }
 
-    // 先手の成りゾーン ("一", "二", "三" → 0,1,2)
+    // **先手の成りゾーン ("一", "二", "三" → 0,1,2)**
     if (isFirstPlayer && toX <= 2) {
       console.log("✅ 先手が成れる位置に移動");
       return true;
     }
 
-    // 後手の成りゾーン ("七", "八", "九" → 6,7,8)
+    // **後手の成りゾーン ("七", "八", "九" → 6,7,8)**
     if (!isFirstPlayer && toX >= 6) {
       console.log("✅ 後手が成れる位置に移動");
       return true;
@@ -131,13 +151,14 @@ const GamePage: React.FC<GamePageProps> = ({
     }
 
     let piece = board[fromX]?.[fromY];
-		let fromCaptured = false;
-		
+    let fromCaptured = false;
+
     if (fromX === 9 || fromX === 10) {
       // 駒台からの駒の場合
       const capturedPiecesList =
         fromX === 9 ? capturedPieces.firstPlayer : capturedPieces.secondPlayer;
       piece = capturedPiecesList[fromY]?.piece;
+      fromCaptured = true; // 駒台からの駒であることを示す
 
       // ログを追加
       if (piece) {
@@ -163,7 +184,11 @@ const GamePage: React.FC<GamePageProps> = ({
     );
 
     // **成り判定チェック**
-    if (!fromCaptured && promote === null && shouldPromote(piece, toX)) {
+    if (
+      !fromCaptured &&
+      promote === null &&
+      shouldPromote(piece, toX, fromCaptured)
+    ) {
       console.log("🛑 成りのモーダルを表示");
       setPromoteMove({ fromX, fromY, toX, toY });
       setShowPromoteModal(true);

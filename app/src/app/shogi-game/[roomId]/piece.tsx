@@ -6,6 +6,8 @@ interface PieceProps {
   y: number;
   isSecondPlayer: boolean;
   isFirstPlayer: boolean; // 現在のプレイヤーが先手かどうか
+  fromCaptured?: boolean; // 駒台からの駒かどうか
+  capturedIndex?: number; // 駒台のインデックス
 }
 
 const Piece: React.FC<PieceProps> = ({
@@ -14,6 +16,8 @@ const Piece: React.FC<PieceProps> = ({
   y,
   isSecondPlayer,
   isFirstPlayer,
+  fromCaptured = false,
+  capturedIndex,
 }) => {
   const isFirstPlayerPiece = piece === piece.toUpperCase();
   const isOwnPiece =
@@ -22,8 +26,8 @@ const Piece: React.FC<PieceProps> = ({
 
   const [{ isDragging }, drag] = useDrag({
     type: "PIECE",
-    item: { x, y, piece },
-    canDrag: isOwnPiece, // 自分の駒のみドラッグ可能
+    item: { x, y, piece, fromCaptured, capturedIndex },
+    canDrag: isOwnPiece || fromCaptured, // 自分の駒または駒台の駒のみドラッグ可能
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -54,13 +58,18 @@ const Piece: React.FC<PieceProps> = ({
     pb: "prom-bishop",
     PS: "prom-silver",
     ps: "prom-silver",
-    PK: "prom-knight",
-    pk: "prom-knight",
+    PN: "prom-knight",
+    pn: "prom-knight",
     PL: "prom-lance",
-    Pl: "prom-lance",
+    pl: "prom-lance",
   };
 
   const pieceType = pieceTypeMap[piece];
+
+  if (!pieceType) {
+    console.error(`未定義の駒タイプ: ${piece}`);
+    return null;
+  }
 
   const player = isSecondPlayer
     ? isFirstPlayerPiece

@@ -6,7 +6,18 @@ import axios from "axios";
 import io from "socket.io-client";
 import GamePage from "./game";
 
-const socket = io("http://localhost:3001", {
+// 環境変数からURLを取得
+const socketUrl =
+  process.env.NEXT_PUBLIC_MODE === "production"
+    ? process.env.NEXT_PUBLIC_SOCKET_URL_PROD
+    : process.env.NEXT_PUBLIC_SOCKET_URL_DEV;
+
+const apiUrl =
+  process.env.NEXT_PUBLIC_MODE === "production"
+    ? process.env.NEXT_PUBLIC_API_URL_PROD
+    : process.env.NEXT_PUBLIC_API_URL_DEV;
+
+const socket = io(socketUrl, {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -34,9 +45,7 @@ const ShogiGame = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
-        );
+        const response = await axios.get(`${apiUrl}/room/${roomId}`);
         setUsers(response.data.users);
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -81,7 +90,6 @@ const ShogiGame = () => {
       console.log("ゲームが開始されました！");
     });
 
-    // ユーザーが切断したときのメッセージをログに表示
     socket.on("game-over", ({ message }) => {
       console.log(message);
     });
@@ -100,7 +108,6 @@ const ShogiGame = () => {
     socket.on(
       "cell-clicked",
       ({ x, y, userId, username, position, playerRole }) => {
-        // データが正しいか検証
         if (!username || !position || !playerRole) {
           console.error("不正なデータを受信しました:", {
             x,
@@ -116,7 +123,6 @@ const ShogiGame = () => {
         const logMessage = `${username} (${playerRole})：${position}`;
         setLogs((prevLogs) => [...prevLogs, logMessage]);
 
-        // ターン切り替え
         if (firstPlayer && secondPlayer) {
           setCurrentPlayer(
             currentPlayer === firstPlayer.id ? secondPlayer.id : firstPlayer.id
@@ -132,10 +138,7 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/leave-room`, {
-        roomId,
-        userId,
-      });
+      await axios.post(`${apiUrl}/leave-room`, { roomId, userId });
       socket.emit("leave-room", { roomId, userId, username: "YourUsername" });
       router.push("/");
     } catch (error) {
@@ -145,7 +148,7 @@ const ShogiGame = () => {
 
   const handleStartGame = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/start-game`, { roomId });
+      await axios.post(`${apiUrl}/start-game`, { roomId });
     } catch (error) {
       console.error("Error starting game:", error);
     }

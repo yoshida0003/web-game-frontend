@@ -7,7 +7,18 @@ import PromoteModal from "./promoteModal";
 import Square from "./square";
 import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネントのインポート
 
-const socket = io("http://localhost:3001", {
+// 環境変数からURLを取得
+const socketUrl =
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_SOCKET_URL_PROD
+    : process.env.NEXT_PUBLIC_SOCKET_URL_DEV;
+
+const ShogiapiUrl =
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_SHOGI_API_URL_PROD
+    : process.env.NEXT_PUBLIC_SHOGI_API_URL_DEV;
+
+const socket = io(socketUrl, {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -264,17 +275,14 @@ const GamePage: React.FC<GamePageProps> = ({
 
     try {
       // まず移動が合法かどうかをチェック
-      const validateResponse = await axios.post(
-        "http://localhost:3001/api/shogi/validate-move",
-        {
-          roomId,
-          userId,
-          fromX: actualFromX,
-          fromY: actualFromY,
-          toX: actualToX,
-          toY: actualToY,
-        }
-      );
+      const validateResponse = await axios.post(`${ShogiapiUrl}/validate-move`, {
+        roomId,
+        userId,
+        fromX: actualFromX,
+        fromY: actualFromY,
+        toX: actualToX,
+        toY: actualToY,
+      });
 
       console.log("🎯 validateMove API レスポンス:", validateResponse.data);
 
@@ -293,18 +301,15 @@ const GamePage: React.FC<GamePageProps> = ({
         }
 
         // 実際に移動を行う
-        const response = await axios.post(
-          "http://localhost:3001/api/shogi/move-piece",
-          {
-            roomId,
-            userId,
-            fromX: actualFromX,
-            fromY: actualFromY,
-            toX: actualToX,
-            toY: actualToY,
-            promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
-          }
-        );
+        const response = await axios.post(`${ShogiapiUrl}/move-piece`, {
+          roomId,
+          userId,
+          fromX: actualFromX,
+          fromY: actualFromY,
+          toX: actualToX,
+          toY: actualToY,
+          promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
+        });
 
         console.log("🎯 movePiece API レスポンス:", response.data);
 
@@ -334,13 +339,10 @@ const GamePage: React.FC<GamePageProps> = ({
 
   const resign = async () => {
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/shogi/resign",
-        {
-          roomId,
-          userId,
-        }
-      );
+      const response = await axios.post(`${ShogiapiUrl}/resign`, {
+        roomId,
+        userId,
+      });
 
       console.log("🎯 resign API レスポンス:", response.data);
       alert("降参しました");

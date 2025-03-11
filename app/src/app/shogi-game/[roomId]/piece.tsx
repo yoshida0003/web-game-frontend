@@ -58,13 +58,18 @@ const Piece: React.FC<PieceProps> = ({
     pb: "prom-bishop",
     PS: "prom-silver",
     ps: "prom-silver",
-    PK: "prom-knight",
-    pk: "prom-knight",
+    PN: "prom-knight",
+    pn: "prom-knight",
     PL: "prom-lance",
-    Pl: "prom-lance",
+    pl: "prom-lance",
   };
 
   const pieceType = pieceTypeMap[piece];
+
+  if (!pieceType) {
+    console.error(`未定義の駒タイプ: ${piece}`);
+    return null;
+  }
 
   const player = isSecondPlayer
     ? isFirstPlayerPiece

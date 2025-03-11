@@ -46,6 +46,8 @@ const GamePage: React.FC<GamePageProps> = ({
     toX: number;
     toY: number;
   } | null>(null);
+  const [showResignModal, setShowResignModal] = useState(false);
+  const [resignMessage, setResignMessage] = useState("");
 
   // 盤面のラベル（先手・後手で異なる）
   const rowLabels = isFirstPlayer
@@ -58,35 +60,61 @@ const GamePage: React.FC<GamePageProps> = ({
   useEffect(() => {
     socket.on(
       "update-board",
-      ({ board, currentPlayer, logs, capturedPieces }) => {
-        console.log("📥 クライアントが update-board を受信: ", {
-          board,
-          currentPlayer,
-          logs,
-          capturedPieces,
-        });
+      ({
+        roomId: updatedRoomId,
+        board,
+        currentPlayer,
+        logs,
+        capturedPieces,
+      }) => {
+        console.log(
+          `📥 [${updatedRoomId}] クライアントが update-board を受信！`,
+          {
+            board,
+            currentPlayer,
+            logs,
+            capturedPieces,
+          }
+        );
 
         setBoard([...board]);
         setCurrentPlayer(currentPlayer);
         setLogs([...logs]);
 
-        // 🔹 サーバーから送られた capturedPieces をそのまま利用
         setCapturedPieces({
-          firstPlayer: capturedPieces.firstPlayer, // 先手が取った駒
-          secondPlayer: capturedPieces.secondPlayer, // 後手が取った駒
+          firstPlayer: capturedPieces.firstPlayer,
+          secondPlayer: capturedPieces.secondPlayer,
         });
       }
     );
 
+    socket.on("game-over", ({ message }) => {
+      setResignMessage(message);
+      setShowResignModal(true);
+    });
+
+    console.log(`📡 クライアントが部屋 ${roomId} に join-room を送信！`);
+    socket.emit("join-room", { roomId, userId });
+
+    socket.on("user-joined", ({ userId, username }) => {
+      console.log(`👥 [${roomId}] ${username} (${userId}) が部屋に参加！`);
+    });
+
     return () => {
       socket.off("update-board");
+      socket.off("game-over");
     };
-  }, [socket]);
+  }, [socket, roomId, userId]);
 
   // 成り判定
-  const shouldPromote = (piece: string, toX: number, fromCaptured: boolean) => {
+  const shouldPromote = (
+    piece: string,
+    fromX: number,
+    toX: number,
+    fromCaptured: boolean
+  ) => {
     console.log(
-      `🧐 成り判定チェック: piece=${piece}, toX=${toX}, fromCaptured=${fromCaptured}, isFirstPlayer=${isFirstPlayer}`
+      `🧐 成り判定チェック: piece=${piece}, fromX=${fromX}, toX=${toX}, fromCaptured=${fromCaptured}, isFirstPlayer=${isFirstPlayer}`
     );
 
     // **駒台から打つ駒は成れない**
@@ -122,18 +150,47 @@ const GamePage: React.FC<GamePageProps> = ({
     }
 
     // **先手の成りゾーン ("一", "二", "三" → 0,1,2)**
-    if (isFirstPlayer && toX <= 2) {
+    if (isFirstPlayer && (fromX <= 2 || toX <= 2)) {
       console.log("✅ 先手が成れる位置に移動");
       return true;
     }
 
     // **後手の成りゾーン ("七", "八", "九" → 6,7,8)**
-    if (!isFirstPlayer && toX >= 6) {
+    if (!isFirstPlayer && (fromX >= 6 || toX >= 6)) {
       console.log("✅ 後手が成れる位置に移動");
       return true;
     }
 
     console.log("❌ 成れない位置");
+    return false;
+  };
+
+  const shouldAutoPromote = (
+    piece: string,
+    toX: number,
+    isFirstPlayer: boolean
+  ): boolean => {
+    // 歩の自動成り判定
+    if (piece.toLowerCase() === "p") {
+      if ((isFirstPlayer && toX === 0) || (!isFirstPlayer && toX === 8)) {
+        return true; // 相手陣営の1段目に進む場合は自動的に成る
+      }
+    }
+
+    // 桂馬の自動成り判定
+    if (piece.toLowerCase() === "n") {
+      if ((isFirstPlayer && toX <= 1) || (!isFirstPlayer && toX >= 7)) {
+        return true; // 相手陣営の1, 2段目に進む場合は自動的に成る
+      }
+    }
+
+    // 香車の自動成り判定
+    if (piece.toLowerCase() === "l") {
+      if ((isFirstPlayer && toX === 0) || (!isFirstPlayer && toX === 8)) {
+        return true; // 相手陣営の1段目に進む場合は自動的に成る
+      }
+    }
+
     return false;
   };
 
@@ -183,16 +240,9 @@ const GamePage: React.FC<GamePageProps> = ({
       `🚀 movePiece 実行: ${fromX},${fromY} -> ${toX},${toY}, piece=${piece}`
     );
 
-    // **成り判定チェック**
-    if (
-      !fromCaptured &&
-      promote === null &&
-      shouldPromote(piece, toX, fromCaptured)
-    ) {
-      console.log("🛑 成りのモーダルを表示");
-      setPromoteMove({ fromX, fromY, toX, toY });
-      setShowPromoteModal(true);
-      return; // ✅ 初回の成り確認で処理を中断
+    // **自動成り判定チェック**
+    if (shouldAutoPromote(piece, toX, isFirstPlayer)) {
+      promote = true;
     }
 
     // サーバーに送る座標（常に先手基準）
@@ -213,8 +263,9 @@ const GamePage: React.FC<GamePageProps> = ({
     );
 
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/shogi/move-piece",
+      // まず移動が合法かどうかをチェック
+      const validateResponse = await axios.post(
+        "http://localhost:3001/api/shogi/validate-move",
         {
           roomId,
           userId,
@@ -222,18 +273,48 @@ const GamePage: React.FC<GamePageProps> = ({
           fromY: actualFromY,
           toX: actualToX,
           toY: actualToY,
-          promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
         }
       );
 
-      console.log("🎯 movePiece API レスポンス:", response.data);
+      console.log("🎯 validateMove API レスポンス:", validateResponse.data);
 
-      // ✅ サーバーのレスポンスを受けて UI を更新
-      if (response.data.board) {
-        setBoard([...response.data.board]);
-        setLogs([...response.data.logs]);
-        setCurrentPlayer(response.data.currentPlayer);
-        setCapturedPieces(response.data.capturedPieces);
+      // 移動が合法であれば成りのモーダルを表示
+      if (validateResponse.data.message === "移動は合法です") {
+        // **成り判定チェック**
+        if (
+          !fromCaptured &&
+          promote === null &&
+          shouldPromote(piece, fromX, toX, fromCaptured)
+        ) {
+          console.log("🛑 成りのモーダルを表示");
+          setPromoteMove({ fromX, fromY, toX, toY });
+          setShowPromoteModal(true);
+          return; // ✅ 初回の成り確認で処理を中断
+        }
+
+        // 実際に移動を行う
+        const response = await axios.post(
+          "http://localhost:3001/api/shogi/move-piece",
+          {
+            roomId,
+            userId,
+            fromX: actualFromX,
+            fromY: actualFromY,
+            toX: actualToX,
+            toY: actualToY,
+            promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
+          }
+        );
+
+        console.log("🎯 movePiece API レスポンス:", response.data);
+
+        // ✅ サーバーのレスポンスを受けて UI を更新
+        if (response.data.board) {
+          setBoard([...response.data.board]);
+          setLogs([...response.data.logs]);
+          setCurrentPlayer(response.data.currentPlayer);
+          setCapturedPieces(response.data.capturedPieces);
+        }
       }
     } catch (error) {
       if (
@@ -243,8 +324,36 @@ const GamePage: React.FC<GamePageProps> = ({
         error.response.data.message
       ) {
         alert(error.response.data.message); // サーバーからのエラーメッセージを表示
+        return; // 🚀 エラーが発生した場合はモーダルを表示しない
       } else {
         alert("駒の移動中にエラーが発生しました");
+        return; // 🚀 エラーが発生した場合はモーダルを表示しない
+      }
+    }
+  };
+
+  const resign = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/shogi/resign",
+        {
+          roomId,
+          userId,
+        }
+      );
+
+      console.log("🎯 resign API レスポンス:", response.data);
+      alert("降参しました");
+    } catch (error) {
+      if (
+        axios.isAxiosError(error) &&
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message); // サーバーからのエラーメッセージを表示
+      } else {
+        alert("降参中にエラーが発生しました");
       }
     }
   };
@@ -254,116 +363,130 @@ const GamePage: React.FC<GamePageProps> = ({
     : [...board].reverse().map((row) => [...row].reverse());
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="flex items-center">
-        {/* 成りのモーダル */}
-        <PromoteModal
-          isOpen={showPromoteModal}
-          onRequestClose={() => setShowPromoteModal(false)}
-          onPromote={async () => {
-            if (promoteMove) {
-              console.log("✅ 成るを選択");
-              await movePiece(
-                promoteMove.fromX,
-                promoteMove.fromY,
-                promoteMove.toX,
-                promoteMove.toY,
-                true
-              );
-            }
-            setShowPromoteModal(false);
-          }}
-          onNotPromote={async () => {
-            if (promoteMove) {
-              console.log("✅ 成らないを選択");
-              await movePiece(
-                promoteMove.fromX,
-                promoteMove.fromY,
-                promoteMove.toX,
-                promoteMove.toY,
-                false
-              ); // 🚀 修正: ここで false を送る
-            }
-            setShowPromoteModal(false);
-          }}
-        />
-        {/* 先手の駒台 */}
-        <div className="flex flex-col items-center mr-4">
-          <h3>先手の駒台</h3>
-          <CapturedPieces
-            capturedPieces={capturedPieces.firstPlayer}
-            isFirstPlayer={isFirstPlayer}
+    <div>
+      <DndProvider backend={HTML5Backend}>
+        <div className="flex items-center">
+          {/* 成りのモーダル */}
+          <PromoteModal
+            isOpen={showPromoteModal}
+            onRequestClose={() => setShowPromoteModal(false)}
+            onPromote={async () => {
+              if (promoteMove) {
+                console.log("✅ 成るを選択");
+                await movePiece(
+                  promoteMove.fromX,
+                  promoteMove.fromY,
+                  promoteMove.toX,
+                  promoteMove.toY,
+                  true
+                );
+              }
+              setShowPromoteModal(false);
+            }}
+            onNotPromote={async () => {
+              if (promoteMove) {
+                console.log("✅ 成らないを選択");
+                await movePiece(
+                  promoteMove.fromX,
+                  promoteMove.fromY,
+                  promoteMove.toX,
+                  promoteMove.toY,
+                  false
+                ); // 🚀 修正: ここで false を送る
+              }
+              setShowPromoteModal(false);
+            }}
           />
-        </div>
-
-        <div>
-          {/* 行番号 (縦) */}
-          <div className="flex ">
-            {colLabels.map((col, index) => (
-              <div
-                key={`col-${index}`}
-                className="w-16 h-8 flex items-center justify-center"
-              >
-                {col}
+          {/* 降参モーダル */}
+          {showResignModal && (
+            <div className="modal">
+              <div className="modal-content">
+                <h2>{resignMessage}</h2>
+                <button onClick={() => setShowResignModal(false)}>OK</button>
               </div>
-            ))}
+            </div>
+          )}
+          {/* 先手の駒台 */}
+          <div className="flex flex-col items-center mr-4">
+            <h3>先手の駒台</h3>
+            <CapturedPieces
+              capturedPieces={capturedPieces.firstPlayer}
+              isFirstPlayer={isFirstPlayer}
+            />
           </div>
 
-          {/* 盤面 */}
-          <div className="flex">
-            <div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
-              {displayedBoard.map((row, rowIndex) =>
-                row.map((cell, colIndex) => (
-                  <Square
-                    key={`${rowIndex}-${colIndex}`}
-                    x={rowIndex}
-                    y={colIndex}
-                    piece={cell}
-                    movePiece={movePiece}
-                    isFirstPlayer={isFirstPlayer}
-                  />
-                ))
-              )}
-            </div>
-
-            <div className="flex flex-col">
-              {rowLabels.map((row, index) => (
+          <div>
+            {/* 行番号 (縦) */}
+            <div className="flex ">
+              {colLabels.map((col, index) => (
                 <div
-                  key={`row-${index}`}
-                  className="w-8 h-16 flex items-center justify-center"
+                  key={`col-${index}`}
+                  className="w-16 h-8 flex items-center justify-center"
                 >
-                  {row}
+                  {col}
                 </div>
               ))}
             </div>
+
+            {/* 盤面 */}
+            <div className="flex">
+              <div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
+                {displayedBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) => (
+                    <Square
+                      key={`${rowIndex}-${colIndex}`}
+                      x={rowIndex}
+                      y={colIndex}
+                      piece={cell}
+                      movePiece={movePiece}
+                      isFirstPlayer={isFirstPlayer}
+                    />
+                  ))
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                {rowLabels.map((row, index) => (
+                  <div
+                    key={`row-${index}`}
+                    className="w-8 h-16 flex items-center justify-center"
+                  >
+                    {row}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 後手の駒台 */}
+          <div className="flex flex-col items-center ml-4">
+            <h3>後手の駒台</h3>
+            <CapturedPieces
+              capturedPieces={capturedPieces.secondPlayer}
+              isFirstPlayer={!isFirstPlayer}
+            />
+          </div>
+
+          {/* ログエリア */}
+          <div className="ml-4">
+            <h3 className="mt-4">
+              {currentPlayer === userId
+                ? "あなたのターンです"
+                : "相手のターンです"}
+            </h3>
+            <h3>ログ</h3>
+            <ul>
+              {logs.map((log, index) => (
+                <li key={`${log}-${index}`}>{log}</li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        {/* 後手の駒台 */}
-        <div className="flex flex-col items-center ml-4">
-          <h3>後手の駒台</h3>
-          <CapturedPieces
-            capturedPieces={capturedPieces.secondPlayer}
-            isFirstPlayer={!isFirstPlayer}
-          />
-        </div>
-
-        {/* ログエリア */}
-        <div className="ml-4">
-          <h3 className="mt-4">
-            {currentPlayer === userId
-              ? "あなたのターンです"
-              : "相手のターンです"}
-          </h3>
-          <h3>ログ</h3>
-          <ul>
-            {logs.map((log, index) => (
-              <li key={`${log}-${index}`}>{log}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </DndProvider>
+      </DndProvider>
+      <button onClick={resign} className="mt-4 p-2 bg-red-500 text-white">
+        降参
+      </button>
+    </div>
   );
 };
 

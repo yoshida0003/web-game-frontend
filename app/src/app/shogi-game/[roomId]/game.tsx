@@ -6,6 +6,8 @@ import io from "socket.io-client";
 import PromoteModal from "./promoteModal";
 import Square from "./square";
 import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネントのインポート
+import HamburgerMenu from "./logHumburgerMenu";
+import './shogi.css';
 
 // 環境変数からURLを取得
 const socketUrl =
@@ -365,9 +367,12 @@ const GamePage: React.FC<GamePageProps> = ({
     : [...board].reverse().map((row) => [...row].reverse());
 
   return (
-    <div>
+    <div className="shogiGamePage">
       <DndProvider backend={HTML5Backend}>
         <div className="flex items-center">
+          {/* ハンバーガーメニュー */}
+          <HamburgerMenu logs={logs} />
+
           {/* 成りのモーダル */}
           <PromoteModal
             isOpen={showPromoteModal}
@@ -394,7 +399,7 @@ const GamePage: React.FC<GamePageProps> = ({
                   promoteMove.toX,
                   promoteMove.toY,
                   false
-                ); // 🚀 修正: ここで false を送る
+                ); 
               }
               setShowPromoteModal(false);
             }}
@@ -408,86 +413,90 @@ const GamePage: React.FC<GamePageProps> = ({
               </div>
             </div>
           )}
-          {/* 先手の駒台 */}
-          <div className="flex flex-col items-center mr-4">
-            <h3>先手の駒台</h3>
-            <CapturedPieces
-              capturedPieces={capturedPieces.firstPlayer}
-              isFirstPlayer={isFirstPlayer}
-            />
-          </div>
-
-          <div>
-            {/* 行番号 (縦) */}
-            <div className="flex ">
-              {colLabels.map((col, index) => (
-                <div
-                  key={`col-${index}`}
-                  className="w-16 h-8 flex items-center justify-center"
-                >
-                  {col}
-                </div>
-              ))}
+          <div className="flex items-center">
+            {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
+            <div className="flex flex-col items-center pb-96 mb-36">
+              <h3>{isFirstPlayer ? "後手の駒台" : "先手の駒台"}</h3>
+              <CapturedPieces
+                capturedPieces={
+                  isFirstPlayer
+                    ? capturedPieces.secondPlayer
+                    : capturedPieces.firstPlayer
+                }
+                isFirstPlayer={isFirstPlayer}
+                playerSide={isFirstPlayer ? "second" : "first"}
+              />
             </div>
 
             {/* 盤面 */}
-            <div className="flex">
-              <div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
-                {displayedBoard.map((row, rowIndex) =>
-                  row.map((cell, colIndex) => (
-                    <Square
-                      key={`${rowIndex}-${colIndex}`}
-                      x={rowIndex}
-                      y={colIndex}
-                      piece={cell}
-                      movePiece={movePiece}
-                      isFirstPlayer={isFirstPlayer}
-                    />
-                  ))
-                )}
-              </div>
-
-              <div className="flex flex-col">
-                {rowLabels.map((row, index) => (
+            <div className="">
+              {/* 行番号 (縦) */}
+              <div className="flex ">
+                {colLabels.map((col, index) => (
                   <div
-                    key={`row-${index}`}
-                    className="w-8 h-16 flex items-center justify-center"
+                    key={`col-${index}`}
+                    className="w-16 h-8 flex items-center justify-center"
                   >
-                    {row}
+                    {col}
                   </div>
                 ))}
               </div>
+
+              {/* 盤面 */}
+              <div className="flex">
+                <div className="grid grid-cols-9 border border-gray-700 bg-yellow-300 w-[36rem] h-[36rem]">
+                  {displayedBoard.map((row, rowIndex) =>
+                    row.map((cell, colIndex) => (
+                      <Square
+                        key={`${rowIndex}-${colIndex}`}
+                        x={rowIndex}
+                        y={colIndex}
+                        piece={cell}
+                        movePiece={movePiece}
+                        isFirstPlayer={isFirstPlayer}
+                      />
+                    ))
+                  )}
+                </div>
+
+                <div className="flex flex-col">
+                  {rowLabels.map((row, index) => (
+                    <div
+                      key={`row-${index}`}
+                      className="w-8 h-16 flex items-center justify-center"
+                    >
+                      {row}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* 後手の駒台 */}
-          <div className="flex flex-col items-center ml-4">
-            <h3>後手の駒台</h3>
-            <CapturedPieces
-              capturedPieces={capturedPieces.secondPlayer}
-              isFirstPlayer={!isFirstPlayer}
-            />
-          </div>
-
-          {/* ログエリア */}
-          <div className="ml-4">
-            <h3 className="mt-4">
-              {currentPlayer === userId
-                ? "あなたのターンです"
-                : "相手のターンです"}
-            </h3>
-            <h3>ログ</h3>
-            <ul>
-              {logs.map((log, index) => (
-                <li key={`${log}-${index}`}>{log}</li>
-              ))}
-            </ul>
+            {/* 🟢 自分の駒台（自分が先手なら先手の駒台、自分が後手なら後手の駒台） */}
+            <div className="flex flex-col items-center pt-64 ">
+              <button
+                onClick={resign}
+                className="mb-2 p-2 bg-red-500 text-white"
+              >
+                降参
+              </button>
+              <h3>{isFirstPlayer ? "先手の駒台" : "後手の駒台"}</h3>
+              <CapturedPieces
+                capturedPieces={
+                  isFirstPlayer
+                    ? capturedPieces.firstPlayer
+                    : capturedPieces.secondPlayer
+                }
+                isFirstPlayer={isFirstPlayer}
+                playerSide={isFirstPlayer ? "first" : "second"}
+              />
+            </div>
           </div>
         </div>
       </DndProvider>
-      <button onClick={resign} className="mt-4 p-2 bg-red-500 text-white">
-        降参
-      </button>
+      <h3 className="mt-4 text-center">
+        {currentPlayer === userId ? "あなたのターンです" : "相手のターンです"}
+      </h3>
     </div>
   );
 };

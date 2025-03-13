@@ -4,30 +4,31 @@ interface PieceProps {
   piece: string;
   x: number;
   y: number;
-  isSecondPlayer: boolean;
-  isFirstPlayer: boolean; // 現在のプレイヤーが先手かどうか
-  fromCaptured?: boolean; // 駒台からの駒かどうか
-  capturedIndex?: number; // 駒台のインデックス
+  isFirstPlayer: boolean;
+  fromCaptured?: boolean;
+  capturedIndex?: number;
+  isOwner?: boolean;
+  playerSide: "first" | "second"; // ✅ 所有者情報を明示
 }
 
 const Piece: React.FC<PieceProps> = ({
   piece,
   x,
   y,
-  isSecondPlayer,
   isFirstPlayer,
   fromCaptured = false,
   capturedIndex,
+  isOwner,
+  playerSide,
 }) => {
-  const isFirstPlayerPiece = piece === piece.toUpperCase();
-  const isOwnPiece =
-    (isFirstPlayer && isFirstPlayerPiece) ||
-    (!isFirstPlayer && !isFirstPlayerPiece);
+  const isOwnPiece = fromCaptured
+    ? isOwner
+    : isFirstPlayer === (playerSide === "first"); // ✅ 自分の駒台または自分の駒のみドラッグ可能
 
   const [{ isDragging }, drag] = useDrag({
     type: "PIECE",
-    item: { x, y, piece, fromCaptured, capturedIndex },
-    canDrag: isOwnPiece || fromCaptured, // 自分の駒または駒台の駒のみドラッグ可能
+    item: { x, y, piece, fromCaptured, capturedIndex, playerSide },
+    canDrag: isOwnPiece,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -71,20 +72,17 @@ const Piece: React.FC<PieceProps> = ({
     return null;
   }
 
-  const player = isSecondPlayer
-    ? isFirstPlayerPiece
-      ? "second"
-      : "first"
-    : isFirstPlayerPiece
-    ? "first"
-    : "second";
+  const pieceImage = `/image/${playerSide}-${pieceType}.png`;
 
-  const pieceImage = `/image/${player}-${pieceType}.png`;
+  // ✅ 後手視点なら 180° 回転させる
+  const isFlipped = !isFirstPlayer;
 
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`cursor-grab ${isDragging ? "opacity-50" : ""}`}
+      className={`relative z-0 cursor-grab ${isDragging ? "opacity-50" : ""} ${
+        isFlipped ? "rotate-180" : ""
+      } z-10`} // ✅ 後手視点なら 180° 回転
     >
       <img src={pieceImage} alt={pieceType} className="w-8 h-8" />
     </div>

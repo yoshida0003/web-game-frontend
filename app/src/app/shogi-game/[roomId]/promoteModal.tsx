@@ -16,8 +16,8 @@ const PromoteModal: React.FC<PromoteModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-4 rounded shadow-lg">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-999">
+      <div className="bg-white p-4 rounded shadow-lg relative">
         <h2>成りますか？</h2>
         <div className="flex justify-around mt-4">
           <button

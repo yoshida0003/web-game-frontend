@@ -80,9 +80,9 @@ const Piece: React.FC<PieceProps> = ({
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`relative z-0 cursor-grab ${isDragging ? "opacity-50" : ""} ${
+      className={`cursor-grab ${isDragging ? "opacity-50" : ""} ${
         isFlipped ? "rotate-180" : ""
-      } z-10`} // ✅ 後手視点なら 180° 回転
+      } `} // ✅ 後手視点なら 180° 回転
     >
       <img src={pieceImage} alt={pieceType} className="w-8 h-8" />
     </div>

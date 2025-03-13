@@ -34,7 +34,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({
         return (
           <div
             key={`${owner}-${index}`}
-            className={`relative w-8 h-8 flex items-center justify-center border border-gray-700 ${
+            className={`relative z-1 w-8 h-8 flex items-center justify-center border border-gray-700 ${
               owner === "first" ? "bg-blue-200" : "bg-red-200"
             }`}
           >

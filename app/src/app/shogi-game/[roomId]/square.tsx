@@ -51,9 +51,7 @@ const Square: React.FC<SquareProps> = ({
         targetY = 8 - y;
       }
 
-      console.log(
-        `🎯 ドロップ: (${fromX},${fromY}) → (${targetX},${targetY})`
-      );
+      console.log(`🎯 ドロップ: (${fromX},${fromY}) → (${targetX},${targetY})`);
       await movePiece(fromX, fromY, targetX, targetY);
     },
     collect: (monitor) => ({

@@ -10,7 +10,6 @@ interface CapturedPiecesProps {
 const CapturedPieces: React.FC<CapturedPiecesProps> = ({
   capturedPieces,
   isFirstPlayer,
-  playerSide,
 }) => {
   // 駒の数をカウント
   const pieceCount = capturedPieces.reduce((acc, { piece }) => {

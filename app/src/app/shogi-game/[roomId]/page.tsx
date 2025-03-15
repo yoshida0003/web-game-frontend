@@ -242,7 +242,6 @@ const ShogiGame = () => {
       </div>
     </div>
   );
-
 };
 
 export default ShogiGame;

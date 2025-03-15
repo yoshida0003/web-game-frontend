@@ -9,7 +9,6 @@ import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネ
 import HamburgerMenu from "./logHumburgerMenu";
 import "./shogi.css";
 
-
 // 環境変数からURLを取得
 const socketUrl =
   process.env.NODE_ENV === "production"

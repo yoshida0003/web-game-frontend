@@ -9,6 +9,7 @@ import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネ
 import HamburgerMenu from "./logHumburgerMenu";
 import "./shogi.css";
 
+
 // 環境変数からURLを取得
 const socketUrl =
   process.env.NODE_ENV === "production"
@@ -288,7 +289,7 @@ const GamePage: React.FC<GamePageProps> = ({
           toY: actualToY,
         }
       );
-
+      
       console.log("🎯 validateMove API レスポンス:", validateResponse.data);
 
       // 移動が合法であれば成りのモーダルを表示
@@ -354,7 +355,6 @@ const GamePage: React.FC<GamePageProps> = ({
           userId,
         }
       );
-
       console.log("🎯 resign API レスポンス:", response.data);
       alert("降参しました");
     } catch (error) {

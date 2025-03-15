@@ -18,3 +18,9 @@ body {
   color: var(--foreground);
   background: var(--background);
 }
+
+
+html.wf-active,
+html.loading-delay {
+  visibility: visible;
+}

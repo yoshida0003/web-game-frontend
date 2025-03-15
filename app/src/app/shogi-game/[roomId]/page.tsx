@@ -7,6 +7,8 @@ import io from "socket.io-client";
 import adobeLoader from "../../adobeLoader";
 import "./shogi.css";
 import GamePage from "./game";
+import adobeLoader from "../../adobeLoader";
+import "./shogi.css";
 
 // 環境変数からURLを取得
 const socketUrl =
@@ -47,7 +49,6 @@ const ShogiGame = () => {
   useEffect(() => {
     if (process.browser) adobeLoader(document);
   }, []);
-
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -99,7 +100,6 @@ const ShogiGame = () => {
       console.log("ゲームが開始されました！");
     });
 
-    // ユーザーが切断したときのメッセージをログに表示
     socket.on("game-over", ({ message }) => {
       console.log(message);
     });
@@ -118,7 +118,6 @@ const ShogiGame = () => {
     socket.on(
       "cell-clicked",
       ({ x, y, userId, username, position, playerRole }) => {
-        // データが正しいか検証
         if (!username || !position || !playerRole) {
           console.error("不正なデータを受信しました:", {
             x,
@@ -134,7 +133,6 @@ const ShogiGame = () => {
         const logMessage = `${username} (${playerRole})：${position}`;
         setLogs((prevLogs) => [...prevLogs, logMessage]);
 
-        // ターン切り替え
         if (firstPlayer && secondPlayer) {
           setCurrentPlayer(
             currentPlayer === firstPlayer.id ? secondPlayer.id : firstPlayer.id
@@ -245,6 +243,7 @@ const ShogiGame = () => {
       </div>
     </div>
   );
+
 };
 
 export default ShogiGame;

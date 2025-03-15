@@ -1,63 +1,92 @@
 import { useDrag } from "react-dnd";
 
 interface PieceProps {
-	piece: string;
-	x: number;
-	y: number;
-	isSecondPlayer: boolean;
+  piece: string;
+  x: number;
+  y: number;
+  isFirstPlayer: boolean;
+  fromCaptured?: boolean;
+  capturedIndex?: number;
+  isOwner?: boolean;
+  playerSide: "first" | "second"; // ✅ 所有者情報を明示
 }
 
-const Piece: React.FC<PieceProps> = ({ piece, x, y, isSecondPlayer }) => {
-	const [{ isDragging }, drag] = useDrag({
-		type: "PIECE",
-		item: { x, y, piece },
-		collect: (monitor) => ({
-			isDragging: !!monitor.isDragging(),
-		}),
-	});
+const Piece: React.FC<PieceProps> = ({
+  piece,
+  x,
+  y,
+  isFirstPlayer,
+  fromCaptured = false,
+  capturedIndex,
+  isOwner,
+  playerSide,
+}) => {
+  const isOwnPiece = fromCaptured
+    ? isOwner
+    : isFirstPlayer === (playerSide === "first"); // ✅ 自分の駒台または自分の駒のみドラッグ可能
 
-	const pieceTypeMap: { [key: string]: string } = {
-		P: "pawn",
-		p: "pawn",
-		K: "king",
-		k: "king",
-		R: "rook",
-		r: "rook",
-		B: "bishop",
-		b: "bishop",
-		G: "gold",
-		g: "gold",
-		S: "silver",
-		s: "silver",
-		N: "knight",
-		n: "knight",
-		L: "lance",
-		l: "lance",
-		RP: "prom-pawn",
-		rp: "prom-pawn",
-	};
+  const [{ isDragging }, drag] = useDrag({
+    type: "PIECE",
+    item: { x, y, piece, fromCaptured, capturedIndex, playerSide },
+    canDrag: isOwnPiece,
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
 
-	const pieceType = pieceTypeMap[piece];
+  const pieceTypeMap: { [key: string]: string } = {
+    P: "pawn",
+    p: "pawn",
+    K: "king",
+    k: "king",
+    R: "rook",
+    r: "rook",
+    B: "bishop",
+    b: "bishop",
+    G: "gold",
+    g: "gold",
+    S: "silver",
+    s: "silver",
+    N: "knight",
+    n: "knight",
+    L: "lance",
+    l: "lance",
+    PP: "prom-pawn",
+    pp: "prom-pawn",
+    PR: "prom-rook",
+    pr: "prom-rook",
+    PB: "prom-bishop",
+    pb: "prom-bishop",
+    PS: "prom-silver",
+    ps: "prom-silver",
+    PN: "prom-knight",
+    pn: "prom-knight",
+    PL: "prom-lance",
+    pl: "prom-lance",
+  };
 
-	const isFirstPlayerPiece = piece === piece.toUpperCase();
-	const player = isSecondPlayer
-		? isFirstPlayerPiece
-			? "second"
-			: "first"
-		: isFirstPlayerPiece
-			? "first"
-			: "second";
+  const pieceType = pieceTypeMap[piece];
 
-	const pieceImage = `/image/${player}-${pieceType}.png`;
+  if (!pieceType) {
+    console.error(`未定義の駒タイプ: ${piece}`);
+    return null;
+  }
 
-	return (
-		<div
-			ref={drag as unknown as React.Ref<HTMLDivElement>}
-			className={`cursor-grab ${isDragging ? "opacity-50" : ""}`}
-		>
-			<img src={pieceImage} alt={pieceType} className="w-8 h-8" />
-		</div>
-	);
+  const pieceImage = `/image/${playerSide}-${pieceType}.png`;
+
+  // ✅ 後手視点なら 180° 回転させる
+  const isFlipped = !isFirstPlayer;
+
+  return (
+    <div
+      ref={drag as unknown as React.Ref<HTMLDivElement>}
+      className={`relative z-10 cursor-grab ${isDragging ? "opacity-50" : ""} ${
+        isFlipped ? "rotate-180" : ""
+      }`} // ✅ 後手視点なら 180° 回転
+    >
+      <img src={pieceImage} alt={pieceType} className="w-8 h-8" />
+    </div>
+  );
 };
 
 export default Piece;

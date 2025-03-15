@@ -1,0 +1,104 @@
+.bg-EFEBE5 {
+  background-color: #EFEBE5;
+}
+
+.fc-25231F {
+  color: #25231F;
+}
+
+.shogi-font {
+  font-family: fot-tsukuaoldmin-pr6n, sans-serif;
+  font-style: normal;
+  font-weight: 300;
+}
+
+#g-nav {
+  position: fixed;
+  z-index: 999;
+  top: 0;
+  right: -20%;
+  width: 10%;
+  height: 100vh;
+  background: rgba(187, 195, 164, 1);
+  transition: all 0.6s;
+}
+
+#g-nav.panelactive {
+  right: 0;
+}
+
+#g-nav #g-nav-list {
+  position: relative;
+  z-index: 999;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* SimpleBarが適用されるため、overflow: hiddenに変更 */
+  -webkit-overflow-scrolling: touch;
+  transition: all 0.6s;
+}
+
+#g-nav.panelactive #g-nav-list {
+  right: 0;
+}
+
+#g-nav ul {
+  position: relative;
+  /* absoluteからrelativeに変更 */
+  z-index: 999;
+}
+
+#g-nav li {
+  list-style: none;
+}
+
+.openbtn {
+  position: fixed;
+  z-index: 9999;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  width: 100px;
+  height: 100px;
+}
+
+.openbtn span {
+  display: inline-block;
+  transition: all 0.4s;
+  position: absolute;
+  left: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: #666;
+  width: 45%;
+}
+
+.openbtn span:nth-of-type(1) {
+  top: 30px;
+}
+
+.openbtn span:nth-of-type(2) {
+  top: 45px;
+}
+
+.openbtn span:nth-of-type(3) {
+  top: 60px;
+}
+
+.openbtn.active span:nth-of-type(1) {
+  top: 30px;
+  left: 18px;
+  transform: translateY(6px) rotate(-45deg);
+  width: 30%;
+}
+
+.openbtn.active span:nth-of-type(2) {
+  opacity: 0;
+}
+
+.openbtn.active span:nth-of-type(3) {
+  top: 42px;
+  left: 18px;
+  transform: translateY(-6px) rotate(45deg);
+  width: 30%;
+}

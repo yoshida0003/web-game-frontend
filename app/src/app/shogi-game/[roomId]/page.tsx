@@ -7,7 +7,6 @@ import io from "socket.io-client";
 import adobeLoader from "../../adobeLoader";
 import "./shogi.css";
 import GamePage from "./game";
-import adobeLoader from "../../adobeLoader";
 import "./shogi.css";
 
 // 環境変数からURLを取得

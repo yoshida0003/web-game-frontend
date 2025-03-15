@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useDrag } from "react-dnd";
 
 interface PieceProps {
@@ -84,7 +85,13 @@ const Piece: React.FC<PieceProps> = ({
         isFlipped ? "rotate-180" : ""
       }`} // ✅ 後手視点なら 180° 回転
     >
-      <img src={pieceImage} alt={pieceType} className="w-8 h-8" />
+      <Image
+        src={pieceImage}
+        alt={pieceType}
+        width={32}
+        height={32}
+        className="w-8 h-8"
+      />
     </div>
   );
 };

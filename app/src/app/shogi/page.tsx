@@ -4,6 +4,11 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
+const apiUrl =
+  process.env.NEXT_PUBLIC_MODE === "production"
+    ? process.env.NEXT_PUBLIC_API_URL_PROD
+    : process.env.NEXT_PUBLIC_API_URL_DEV;
+
 const ShogiPage = () => {
   const [username, setUsername] = useState<string>("");
   const [roomName, setRoomName] = useState<string>("");
@@ -14,7 +19,7 @@ const ShogiPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://game.yospace.org/api/create-room",
+        `${apiUrl}/create-room`,
         { roomName, username, gameType: "shogi" }
       );
       const { roomId, userId } = response.data;
@@ -28,7 +33,7 @@ const ShogiPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://game.yospace.org/api/join-room",
+        `${apiUrl}/join-room`,
         {
           roomName,
           username,

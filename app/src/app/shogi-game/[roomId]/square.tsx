@@ -31,13 +31,8 @@ const Square: React.FC<SquareProps> = ({
       capturedIndex?: number;
       playerSide: "first" | "second"; // ✅ 駒の所有者情報を保持
     }) => {
-      let {
-        x: fromX,
-        y: fromY,
-        fromCaptured,
-        capturedIndex,
-        playerSide,
-      } = item;
+      let { x: fromX, y: fromY } = item;
+      const { fromCaptured, capturedIndex, playerSide } = item;
       let targetX = x;
       let targetY = y;
 

@@ -28,18 +28,23 @@ const Square: React.FC<SquareProps> = ({
       y: number;
       piece: string;
       fromCaptured: boolean;
-      capturedIndex?: number; // 駒台のインデックス
+      capturedIndex?: number;
+      playerSide: "first" | "second"; // ✅ 駒の所有者情報を保持
     }) => {
-      let { x: fromX, y: fromY, fromCaptured, capturedIndex } = item;
+      let {
+        x: fromX,
+        y: fromY,
+        fromCaptured,
+        capturedIndex,
+        playerSide,
+      } = item;
       let targetX = x;
       let targetY = y;
 
-      // 駒台からの駒の場合、fromX と fromY を特別に扱う
       if (fromCaptured) {
-        fromX = isFirstPlayer ? 9 : 10; // 先手は9、後手は10
-        fromY = capturedIndex ?? -1; // 駒台のインデックス
+        fromX = playerSide === "first" ? 9 : 10; // ✅ 所有者に基づいて処理
+        fromY = capturedIndex ?? -1;
       } else if (!isFirstPlayer) {
-        // 後手の盤面は座標を反転
         fromX = 8 - fromX;
         fromY = 8 - fromY;
         targetX = 8 - x;
@@ -66,8 +71,9 @@ const Square: React.FC<SquareProps> = ({
           piece={piece}
           x={x}
           y={y}
-          isSecondPlayer={!isFirstPlayer}
           isFirstPlayer={isFirstPlayer}
+          playerSide={piece === piece.toUpperCase() ? "first" : "second"} // ✅ 所有者情報を正しく渡す
+          fromCaptured={false} // ✅ 盤面上の駒
         />
       )}
     </div>

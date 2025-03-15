@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env NODE_ENV=development NEXT_PUBLIC_MODE=development next dev --turbopack",
+    "staging": "MODE=staging NEXT_PUBLIC_MODE=staging next dev --turbopack",
+    "build:staging": "MODE=staging NEXT_PUBLIC_MODE=staging next build",
+    "build:prod": "MODE=prod NEXT_PUBLIC_MODE=prod next build",
+    "start:staging": "MODE=staging NEXT_PUBLIC_MODE=staging next start",
+    "start": "MODE=prod NEXT_PUBLIC_MODE=prod next start",
     "lint": "next lint"
   },
   "dependencies": {

@@ -117,7 +117,7 @@ const GamePage: React.FC<GamePageProps> = ({
       socket.off("update-board");
       socket.off("game-over");
     };
-  }, [socket, roomId, userId]);
+  }, [roomId, userId]);
 
   // 成り判定
   const shouldPromote = (

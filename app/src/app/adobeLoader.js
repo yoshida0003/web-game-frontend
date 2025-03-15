@@ -22,7 +22,7 @@ const AdobeRouter = (d) => {
     clearTimeout(t);
     try {
       Typekit.load(config);
-    } catch (e) {}
+    } catch {}
   };
   s.parentNode.insertBefore(tk, s);
 };

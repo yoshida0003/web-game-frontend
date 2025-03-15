@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env NODE_ENV=development NEXT_PUBLIC_MODE=development next dev --turbopack",
+    "staging": "MODE=staging NEXT_PUBLIC_MODE=staging next dev --turbopack",
+    "build:staging": "MODE=staging NEXT_PUBLIC_MODE=staging next build",
+    "build:prod": "MODE=prod NEXT_PUBLIC_MODE=prod next build",
+    "start:staging": "MODE=staging NEXT_PUBLIC_MODE=staging next start",
+    "start": "MODE=prod NEXT_PUBLIC_MODE=prod next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -14,19 +17,16 @@
     "@types/socket.io-client": "^3.0.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.0.0",
-<<<<<<< HEAD
-    "react-redux": "^9.2.0",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
-=======
     "react-modal": "^3.16.3",
-    "react-redux": "^9.2.0"
->>>>>>> 8abdc14113e10b3fa8b63bfc6f0fa87cde0fec1e
+    "react-redux": "^9.2.0",
+    "simplebar": "^6.3.0",
+    "simplebar-react": "^3.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

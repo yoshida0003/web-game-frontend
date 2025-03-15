@@ -25,6 +25,7 @@ const AdobeRouter = (d) => {
     } catch (e) {}
   };
   s.parentNode.insertBefore(tk, s);
-}
+};
 
 export default AdobeRouter;
+

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
+import adobeLoader from "../../adobeLoader";
+import "./shogi.css";
 import GamePage from "./game";
 import adobeLoader from "../../adobeLoader";
 import "./shogi.css";
@@ -51,7 +53,9 @@ const ShogiGame = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get(`${apiUrl}/room/${roomId}`);
+        const response = await axios.get(
+          `${apiUrl}/room/${roomId}`
+        );
         setUsers(response.data.users);
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -144,7 +148,10 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`${apiUrl}/leave-room`, { roomId, userId });
+      await axios.post(`${apiUrl}/leave-room`, {
+        roomId,
+        userId,
+      });
       socket.emit("leave-room", { roomId, userId, username: "YourUsername" });
       router.push("/");
     } catch (error) {

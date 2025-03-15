@@ -7,7 +7,8 @@ import PromoteModal from "./promoteModal";
 import Square from "./square";
 import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネントのインポート
 import HamburgerMenu from "./logHumburgerMenu";
-import './shogi.css';
+import "./shogi.css";
+
 
 // 環境変数からURLを取得
 const socketUrl =
@@ -277,15 +278,18 @@ const GamePage: React.FC<GamePageProps> = ({
 
     try {
       // まず移動が合法かどうかをチェック
-      const validateResponse = await axios.post(`${ShogiapiUrl}/validate-move`, {
-        roomId,
-        userId,
-        fromX: actualFromX,
-        fromY: actualFromY,
-        toX: actualToX,
-        toY: actualToY,
-      });
-
+      const validateResponse = await axios.post(
+        `${ShogiapiUrl}/validate-move`,
+        {
+          roomId,
+          userId,
+          fromX: actualFromX,
+          fromY: actualFromY,
+          toX: actualToX,
+          toY: actualToY,
+        }
+      );
+      
       console.log("🎯 validateMove API レスポンス:", validateResponse.data);
 
       // 移動が合法であれば成りのモーダルを表示
@@ -303,15 +307,18 @@ const GamePage: React.FC<GamePageProps> = ({
         }
 
         // 実際に移動を行う
-        const response = await axios.post(`${ShogiapiUrl}/move-piece`, {
-          roomId,
-          userId,
-          fromX: actualFromX,
-          fromY: actualFromY,
-          toX: actualToX,
-          toY: actualToY,
-          promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
-        });
+        const response = await axios.post(
+          `${ShogiapiUrl}/move-piece`,
+          {
+            roomId,
+            userId,
+            fromX: actualFromX,
+            fromY: actualFromY,
+            toX: actualToX,
+            toY: actualToY,
+            promote: promote ?? false, // 🚀 成らない場合も確実に false を送る
+          }
+        );
 
         console.log("🎯 movePiece API レスポンス:", response.data);
 
@@ -341,11 +348,13 @@ const GamePage: React.FC<GamePageProps> = ({
 
   const resign = async () => {
     try {
-      const response = await axios.post(`${ShogiapiUrl}/resign`, {
-        roomId,
-        userId,
-      });
-
+      const response = await axios.post(
+        `${ShogiapiUrl}/resign`,
+        {
+          roomId,
+          userId,
+        }
+      );
       console.log("🎯 resign API レスポンス:", response.data);
       alert("降参しました");
     } catch (error) {
@@ -399,7 +408,7 @@ const GamePage: React.FC<GamePageProps> = ({
                   promoteMove.toX,
                   promoteMove.toY,
                   false
-                ); 
+                );
               }
               setShowPromoteModal(false);
             }}
@@ -414,18 +423,20 @@ const GamePage: React.FC<GamePageProps> = ({
             </div>
           )}
           <div className="flex items-center">
-            {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
-            <div className="flex flex-col items-center pb-96 mb-36">
-              <h3>{isFirstPlayer ? "後手の駒台" : "先手の駒台"}</h3>
-              <CapturedPieces
-                capturedPieces={
-                  isFirstPlayer
-                    ? capturedPieces.secondPlayer
-                    : capturedPieces.firstPlayer
-                }
-                isFirstPlayer={isFirstPlayer}
-                playerSide={isFirstPlayer ? "second" : "first"}
-              />
+            <div className="pr-4">
+              {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
+              <h3 className="text-center mb-2">{isFirstPlayer ? "後手の駒台" : "先手の駒台"}</h3>
+              <div className="flex flex-col justify-center items-center mb-96 w-36 h-36 border border-gray-700 bg-yellow-300">
+                <CapturedPieces
+                  capturedPieces={
+                    isFirstPlayer
+                      ? capturedPieces.secondPlayer
+                      : capturedPieces.firstPlayer
+                  }
+                  isFirstPlayer={isFirstPlayer}
+                  playerSide={isFirstPlayer ? "second" : "first"}
+                />
+              </div>
             </div>
 
             {/* 盤面 */}
@@ -473,23 +484,29 @@ const GamePage: React.FC<GamePageProps> = ({
             </div>
 
             {/* 🟢 自分の駒台（自分が先手なら先手の駒台、自分が後手なら後手の駒台） */}
-            <div className="flex flex-col items-center pt-64 ">
-              <button
-                onClick={resign}
-                className="mb-2 p-2 bg-red-500 text-white"
-              >
-                降参
-              </button>
-              <h3>{isFirstPlayer ? "先手の駒台" : "後手の駒台"}</h3>
-              <CapturedPieces
-                capturedPieces={
-                  isFirstPlayer
-                    ? capturedPieces.firstPlayer
-                    : capturedPieces.secondPlayer
-                }
-                isFirstPlayer={isFirstPlayer}
-                playerSide={isFirstPlayer ? "first" : "second"}
-              />
+            <div className="pl-4 pt-2">
+              <div className="flex flex-col items-center pt-72">
+                <button
+                  onClick={resign}
+                  className="mb-24 p-2 bg-red-500 text-white"
+                >
+                  降参
+                </button>
+                <h3 className="mb-2">
+                  {isFirstPlayer ? "先手の駒台" : "後手の駒台"}
+                </h3>
+                <div className="flex flex-col justify-center items-center w-36 h-36 border border-gray-700 bg-yellow-300">
+                  <CapturedPieces
+                    capturedPieces={
+                      isFirstPlayer
+                        ? capturedPieces.firstPlayer
+                        : capturedPieces.secondPlayer
+                    }
+                    isFirstPlayer={isFirstPlayer}
+                    playerSide={isFirstPlayer ? "first" : "second"}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

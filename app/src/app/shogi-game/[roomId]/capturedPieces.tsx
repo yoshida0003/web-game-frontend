@@ -34,9 +34,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({
         return (
           <div
             key={`${owner}-${index}`}
-            className={`relative z-1 w-8 h-8 flex items-center justify-center border border-gray-700 ${
-              owner === "first" ? "bg-blue-200" : "bg-red-200"
-            }`}
+            className="relative w-8 h-8 flex items-center justify-center"
           >
             <Piece
               piece={piece}
@@ -51,7 +49,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({
               playerSide={owner} // ✅ 駒の所有者
             />
             {pieceCount[piece] > 1 && (
-              <span className="absolute top-0 right-0 text-xs">
+              <span className="absolute top-0 right-0 text-xs bg-white text-black rounded-full z-20 px-1">
                 {pieceCount[piece]}
               </span>
             )}

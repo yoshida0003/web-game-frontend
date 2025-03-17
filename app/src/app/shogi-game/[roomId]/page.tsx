@@ -9,18 +9,7 @@ import "./shogi.css";
 import GamePage from "./game";
 import "./shogi.css";
 
-// 環境変数からURLを取得
-const socketUrl =
-  process.env.NEXT_PUBLIC_MODE === "production"
-    ? process.env.NEXT_PUBLIC_SOCKET_URL_PROD
-    : process.env.NEXT_PUBLIC_SOCKET_URL_DEV;
-
-const apiUrl =
-  process.env.NEXT_PUBLIC_MODE === "production"
-    ? process.env.NEXT_PUBLIC_API_URL_PROD
-    : process.env.NEXT_PUBLIC_API_URL_DEV;
-
-const socket = io(socketUrl, {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -53,7 +42,7 @@ const ShogiGame = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `${apiUrl}/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
       } catch (error) {
@@ -147,7 +136,7 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post(`${apiUrl}/leave-room`, {
+      await axios.post("https://game.yospace.org/api/leave-room", {
         roomId,
         userId,
       });
@@ -160,7 +149,9 @@ const ShogiGame = () => {
 
   const handleStartGame = async () => {
     try {
-      await axios.post(`${apiUrl}/start-game`, { roomId });
+      await axios.post("https://game.yospace.org/api/start-game", {
+        roomId,
+      });
     } catch (error) {
       console.error("Error starting game:", error);
     }

@@ -9,18 +9,7 @@ import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネ
 import HamburgerMenu from "./logHumburgerMenu";
 import "./shogi.css";
 
-// 環境変数からURLを取得
-const socketUrl =
-  process.env.NODE_ENV === "production"
-    ? process.env.NEXT_PUBLIC_SOCKET_URL_PROD
-    : process.env.NEXT_PUBLIC_SOCKET_URL_DEV;
-
-const ShogiapiUrl =
-  process.env.NODE_ENV === "production"
-    ? process.env.NEXT_PUBLIC_SHOGI_API_URL_PROD
-    : process.env.NEXT_PUBLIC_SHOGI_API_URL_DEV;
-
-const socket = io(socketUrl, {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -278,7 +267,7 @@ const GamePage: React.FC<GamePageProps> = ({
     try {
       // まず移動が合法かどうかをチェック
       const validateResponse = await axios.post(
-        `${ShogiapiUrl}/validate-move`,
+        "https://game.yospace.org/api/shogi/validate-move",
         {
           roomId,
           userId,
@@ -307,7 +296,7 @@ const GamePage: React.FC<GamePageProps> = ({
 
         // 実際に移動を行う
         const response = await axios.post(
-          `${ShogiapiUrl}/move-piece`,
+          "https://game.yospace.org/api/shogi/move-piece",
           {
             roomId,
             userId,
@@ -348,7 +337,7 @@ const GamePage: React.FC<GamePageProps> = ({
   const resign = async () => {
     try {
       const response = await axios.post(
-        `${ShogiapiUrl}/resign`,
+        "https://game.yospace.org/api/shogi/resign",
         {
           roomId,
           userId,

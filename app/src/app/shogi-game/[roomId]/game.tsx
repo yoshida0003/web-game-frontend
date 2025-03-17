@@ -5,7 +5,8 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import io from "socket.io-client";
 import PromoteModal from "./promoteModal";
 import Square from "./square";
-import CapturedPieces from "./capturedPieces"; // CapturedPieces コンポーネントのインポート
+import CapturedPieces from "./capturedPieces";
+import ResignModal from "./ResignModal";
 import HamburgerMenu from "./logHumburgerMenu";
 import "./shogi.css";
 
@@ -61,6 +62,7 @@ const GamePage: React.FC<GamePageProps> = ({
   } | null>(null);
   const [showResignModal, setShowResignModal] = useState(false);
   const [resignMessage, setResignMessage] = useState("");
+	const [isWinner, setIsWinner] = useState(false);
 
   // 盤面のラベル（先手・後手で異なる）
   const rowLabels = isFirstPlayer
@@ -101,8 +103,9 @@ const GamePage: React.FC<GamePageProps> = ({
       }
     );
 
-    socket.on("game-over", ({ message }) => {
+    socket.on("game-over", ({ message, winner }) => {
       setResignMessage(message);
+			setIsWinner(winner === userId);
       setShowResignModal(true);
     });
 
@@ -347,15 +350,14 @@ const GamePage: React.FC<GamePageProps> = ({
 
   const resign = async () => {
     try {
-      const response = await axios.post(
-        `${ShogiapiUrl}/resign`,
-        {
-          roomId,
-          userId,
-        }
-      );
+      const response = await axios.post(`${ShogiapiUrl}/resign`, {
+        roomId,
+        userId,
+      });
       console.log("🎯 resign API レスポンス:", response.data);
-      alert("降参しました");
+      setResignMessage("降参しました。");
+      setIsWinner(false); // 勝者ではないことを設定
+      setShowResignModal(true);
     } catch (error) {
       if (
         axios.isAxiosError(error) &&
@@ -368,6 +370,10 @@ const GamePage: React.FC<GamePageProps> = ({
         alert("降参中にエラーが発生しました");
       }
     }
+  };
+
+  const handleCloseResignModal = () => {
+    setShowResignModal(false);
   };
 
   const displayedBoard = isFirstPlayer
@@ -414,17 +420,18 @@ const GamePage: React.FC<GamePageProps> = ({
           />
           {/* 降参モーダル */}
           {showResignModal && (
-            <div className="modal">
-              <div className="modal-content">
-                <h2>{resignMessage}</h2>
-                <button onClick={() => setShowResignModal(false)}>OK</button>
-              </div>
-            </div>
+            <ResignModal
+              message={resignMessage}
+              onClose={handleCloseResignModal} // 修正: onClose コールバックでモーダルを閉じる
+              isWinner={isWinner} // 勝者かどうかを渡す
+            />
           )}
           <div className="flex items-center">
             <div className="pr-4">
               {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
-              <h3 className="text-center mb-2">{isFirstPlayer ? "後手の駒台" : "先手の駒台"}</h3>
+              <h3 className="text-center mb-2">
+                {isFirstPlayer ? "後手の駒台" : "先手の駒台"}
+              </h3>
               <div className="flex flex-col justify-center items-center mb-96 w-36 h-36 border border-gray-700 bg-yellow-300">
                 <CapturedPieces
                   capturedPieces={

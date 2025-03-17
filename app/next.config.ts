@@ -1,12 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  reactStrictMode: false,
-};
-
-export default nextConfig;
-
+// next.config.js
 module.exports = {
+  reactStrictMode: false,
   env: {
     NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
     NEXT_PUBLIC_API_URL_PROD: process.env.NEXT_PUBLIC_API_URL_PROD,

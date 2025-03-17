@@ -149,9 +149,7 @@ const ShogiGame = () => {
 
   const handleStartGame = async () => {
     try {
-      await axios.post("https://game.yospace.org/api/start-game", {
-        roomId,
-      });
+      await axios.post(`https://game.yospace.org/api/start-game`, { roomId });
     } catch (error) {
       console.error("Error starting game:", error);
     }

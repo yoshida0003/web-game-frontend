@@ -217,7 +217,7 @@ const ShogiGame = () => {
           </button>
         )}
         {gameStarted && userId && (
-          <div className="flex justify-center">
+          <div className="flex justify-center pt-10">
             <GamePage
               board={board}
               roomId={roomId}

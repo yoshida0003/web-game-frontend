@@ -411,9 +411,11 @@ const GamePage: React.FC<GamePageProps> = ({
             </div>
           )}
           <div className="flex items-center">
-            <div className="pr-4">
+            <div className="pr-4 pb-12">
               {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
-              <h3 className="text-center mb-2">{isFirstPlayer ? "後手の駒台" : "先手の駒台"}</h3>
+              <h3 className="text-center mb-2">
+                {isFirstPlayer ? "後手の駒台" : "先手の駒台"}
+              </h3>
               <div className="flex flex-col justify-center items-center mb-96 w-36 h-36 border border-gray-700 bg-yellow-300">
                 <CapturedPieces
                   capturedPieces={
@@ -499,7 +501,7 @@ const GamePage: React.FC<GamePageProps> = ({
           </div>
         </div>
       </DndProvider>
-      <h3 className="mt-4 text-center">
+      <h3 className="mt-4 text-center pt-3 font-bold md:text-xl lg:text-2xl">
         {currentPlayer === userId ? "あなたのターンです" : "相手のターンです"}
       </h3>
     </div>

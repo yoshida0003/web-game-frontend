@@ -25,8 +25,8 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const url = isLogin
-      ? "http://localhost:3001/api/login"
-      : "http://localhost:3001/api/register";
+      ? "https://game.yospace.org/api/login"
+      : "https://game.yospace.org/api/register";
     const body: AuthRequestBody = isLogin ? { email, password } : { email, password, nickname };
 
     const res: Response = await fetch(url, {

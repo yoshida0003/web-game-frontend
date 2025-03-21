@@ -10,18 +10,7 @@ import ResignModal from "./ResignModal";
 import HamburgerMenu from "./logHumburgerMenu";
 import "./shogi.css";
 
-// 環境変数からURLを取得
-const socketUrl =
-  process.env.NODE_ENV === "production"
-    ? process.env.NEXT_PUBLIC_SOCKET_URL_PROD
-    : process.env.NEXT_PUBLIC_SOCKET_URL_DEV;
-
-const ShogiapiUrl =
-  process.env.NODE_ENV === "production"
-    ? process.env.NEXT_PUBLIC_SHOGI_API_URL_PROD
-    : process.env.NEXT_PUBLIC_SHOGI_API_URL_DEV;
-
-const socket = io(socketUrl, {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -281,7 +270,7 @@ const GamePage: React.FC<GamePageProps> = ({
     try {
       // まず移動が合法かどうかをチェック
       const validateResponse = await axios.post(
-        `${ShogiapiUrl}/validate-move`,
+        "https://game.yospace.org/api/shogi/validate-move",
         {
           roomId,
           userId,
@@ -310,7 +299,7 @@ const GamePage: React.FC<GamePageProps> = ({
 
         // 実際に移動を行う
         const response = await axios.post(
-          `${ShogiapiUrl}/move-piece`,
+          "https://game.yospace.org/api/shogi/move-piece",
           {
             roomId,
             userId,
@@ -350,10 +339,13 @@ const GamePage: React.FC<GamePageProps> = ({
 
   const resign = async () => {
     try {
-      const response = await axios.post(`${ShogiapiUrl}/resign`, {
-        roomId,
-        userId,
-      });
+      const response = await axios.post(
+        "https://game.yospace.org/api/shogi/resign",
+        {
+          roomId,
+          userId,
+        }
+      );
       console.log("🎯 resign API レスポンス:", response.data);
       setResignMessage("降参しました。");
       setIsWinner(false); // 勝者ではないことを設定
@@ -427,7 +419,7 @@ const GamePage: React.FC<GamePageProps> = ({
             />
           )}
           <div className="flex items-center">
-            <div className="pr-4">
+            <div className="pr-4 pb-12">
               {/* 🟢 相手の駒台（自分が先手なら後手の駒台、自分が後手なら先手の駒台） */}
               <h3 className="text-center mb-2">
                 {isFirstPlayer ? "後手の駒台" : "先手の駒台"}
@@ -517,7 +509,7 @@ const GamePage: React.FC<GamePageProps> = ({
           </div>
         </div>
       </DndProvider>
-      <h3 className="mt-4 text-center">
+      <h3 className="mt-4 text-center pt-3 font-bold md:text-xl lg:text-2xl">
         {currentPlayer === userId ? "あなたのターンです" : "相手のターンです"}
       </h3>
     </div>

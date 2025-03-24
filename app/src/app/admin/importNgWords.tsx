@@ -55,7 +55,7 @@ const ImportNgWords = () => {
       }
 
       await axios.post(
-        "http://localhost:3001/api/importNgWords",
+        "https://game.yospace.org/api/importNgWords",
         { ngWords },
         {
           headers: {

@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import io from "socket.io-client";
+import Game from "./game"; // Gameコンポーネントをインポート
 
-const socket = io("wss://game.yospace.org", {
+const socket = io("http://localhost:3001", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
 
 const NGWordGamePage = () => {
   const [users, setUsers] = useState<{ id: string; username: string }[]>([]);
+  const [gameStarted, setGameStarted] = useState(false);
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -22,7 +24,7 @@ const NGWordGamePage = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `https://game.yospace.org/api/room/${roomId}`
+          `http://localhost:3001/api/room/${roomId}`
         );
         setUsers(response.data.users);
       } catch (error) {
@@ -55,6 +57,12 @@ const NGWordGamePage = () => {
       router.push("/");
     });
 
+    socket.on("ng-word-game-started", (data) => {
+      alert(data.message);
+      setGameStarted(true);
+      console.log("NGワードゲームが開始されました:", data);
+    });
+
     // サーバーからのログをリッスン
     socket.on("server-log", (message) => {
       console.log(message);
@@ -65,6 +73,7 @@ const NGWordGamePage = () => {
       socket.off("user-joined");
       socket.off("user-left");
       socket.off("room-deleted");
+      socket.off("ng-word-game-started");
       socket.off("server-log");
     };
   }, [roomId, userId, router]);
@@ -79,6 +88,16 @@ const NGWordGamePage = () => {
       router.push("/");
     } catch (error) {
       console.error("Error leaving room:", error);
+    }
+  };
+
+  const handleStartGame = async () => {
+    try {
+      await axios.post(`http://localhost:3001/api/start-ng-word-game`, {
+        roomId,
+      });
+    } catch (error) {
+      console.error("Error starting game:", error);
     }
   };
 
@@ -101,6 +120,19 @@ const NGWordGamePage = () => {
       >
         退出
       </button>
+      {users.length >= 2 && !gameStarted && (
+        <button
+          onClick={handleStartGame}
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-4"
+        >
+          ゲーム開始
+        </button>
+      )}
+      {gameStarted && userId && (
+        <div>
+          <Game users={users} />
+        </div>
+      )}
     </div>
   );
 };

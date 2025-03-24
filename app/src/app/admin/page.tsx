@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // next/router ではなく next/navigation を使用
+import { useRouter } from "next/navigation"; 
+import AddNgWord from "./addNgWord";
+import ImportNgWords from "./importNgWords";
 
 const AdminPage = () => {
   const router = useRouter();
@@ -66,7 +68,9 @@ const AdminPage = () => {
   return (
     <div>
       <h1>管理者ページ</h1>
-      <p>ここは管理者専用のページです。</p>
+      <p>NGワードの追加</p>
+      <AddNgWord />
+      <ImportNgWords />
     </div>
   );
 };

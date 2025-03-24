@@ -12,7 +12,7 @@ const AddNgWord = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
 
-    const response = await fetch("http://localhost:3001/api/addNgWord", {
+    const response = await fetch("https://game.yospace.org/api/addNgWord", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

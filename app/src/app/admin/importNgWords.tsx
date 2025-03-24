@@ -63,8 +63,9 @@ const ImportNgWords = () => {
       }
 
       await axios.post(
-        "http://localhost:3001/api/importNgWords",
-        { ngWords: ngWords.map((word) => word.word) },
+
+        "https://game.yospace.org/api/importNgWords",
+        { ngWords },
         {
           headers: {
             "Content-Type": "application/json",

@@ -4,9 +4,14 @@ import Papa from "papaparse";
 import SimpleBar from "simplebar-react";
 import "simplebar/dist/simplebar.min.css";
 
+interface CsvRow {
+  id: string; // 一意の識別子を含むカラム名
+  [key: string]: string;
+}
+
 const ImportNgWords = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [ngWords, setNgWords] = useState<string[]>([]);
+  const [ngWords, setNgWords] = useState<CsvRow[]>([]);
   const [showModal, setShowModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,7 +22,7 @@ const ImportNgWords = () => {
 
   const handleFileUpload = () => {
     if (file) {
-      Papa.parse(file, {
+      Papa.parse<CsvRow>(file, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
@@ -33,7 +38,10 @@ const ImportNgWords = () => {
           const columnName = Object.keys(firstRow)[0]; // 最初のカラム名を取得
           console.log("Detected column name:", columnName);
 
-          const words = results.data.map((row: any) => row[columnName]); // 動的にカラム名を取得
+          const words = results.data.map((row) => ({
+            id: row.id, // 一意の識別子を使用
+            word: row[columnName],
+          }));
           console.log("Extracted words:", words); // 取得した単語リストをログ出力
 
           setNgWords(words);
@@ -56,7 +64,7 @@ const ImportNgWords = () => {
 
       await axios.post(
         "http://localhost:3001/api/importNgWords",
-        { ngWords },
+        { ngWords: ngWords.map((word) => word.word) },
         {
           headers: {
             "Content-Type": "application/json",
@@ -103,8 +111,8 @@ const ImportNgWords = () => {
             </h2>
             <SimpleBar style={{ maxHeight: 300 }}>
               <ul className="list-disc pl-5 mb-4">
-                {ngWords.map((word, index) => (
-                  <li key={index}>{word}</li>
+                {ngWords.map((word) => (
+                  <li key={word.id}>{word.word}</li>
                 ))}
               </ul>
             </SimpleBar>

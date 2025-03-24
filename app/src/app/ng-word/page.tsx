@@ -16,7 +16,7 @@ const NGWordGame = () => {
 		e.preventDefault();
 		try {
 			const response = await axios.post(
-        "https://game.yospace.org/api/create-room",
+        "http://localhost:3001/api/create-room",
         { roomName, username, gameType: "ng-word" } // gameTypeを追加
       );
 			const { roomId, userId } = response.data;
@@ -27,19 +27,23 @@ const NGWordGame = () => {
 	};
 
 	const handleJoinRoom = async (e: FormEvent) => {
-		e.preventDefault();
-		try {
-			const response = await axios.post(
-        "https://game.yospace.org/api/join-room",
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/join-room",
         { roomName, username, gameType: "ng-word" } // gameTypeを追加
       );
-			const { roomId, userId } = response.data;
-			router.push(`/ng-word-game/${roomId}?userId=${userId}`);
-		} catch (error) {
-			console.error("Error joining room:", error);
-			alert("部屋が見つかりません");
-		}
-	};
+      const { roomId, userId } = response.data;
+      router.push(`/ng-word-game/${roomId}?userId=${userId}`);
+    } catch (error) {
+      console.error("Error joining room:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        alert(error.response.data.message);
+      } else {
+        alert("部屋が見つかりません");
+      }
+    }
+  };
 
 	return (
 		<div className="container mx-auto p-4">

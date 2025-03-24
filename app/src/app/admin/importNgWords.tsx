@@ -5,13 +5,12 @@ import SimpleBar from "simplebar-react";
 import "simplebar/dist/simplebar.min.css";
 
 interface CsvRow {
-  id: string; // 一意の識別子を含むカラム名
   [key: string]: string;
 }
 
 const ImportNgWords = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [ngWords, setNgWords] = useState<CsvRow[]>([]);
+  const [ngWords, setNgWords] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,10 +37,7 @@ const ImportNgWords = () => {
           const columnName = Object.keys(firstRow)[0]; // 最初のカラム名を取得
           console.log("Detected column name:", columnName);
 
-          const words = results.data.map((row) => ({
-            id: row.id, // 一意の識別子を使用
-            word: row[columnName],
-          }));
+          const words = results.data.map((row) => row[columnName]); // 動的にカラム名を取得
           console.log("Extracted words:", words); // 取得した単語リストをログ出力
 
           setNgWords(words);
@@ -64,7 +60,7 @@ const ImportNgWords = () => {
 
       await axios.post(
         "http://localhost:3001/api/importNgWords",
-        { ngWords: ngWords.map((word) => word.word) },
+        { ngWords },
         {
           headers: {
             "Content-Type": "application/json",
@@ -111,8 +107,8 @@ const ImportNgWords = () => {
             </h2>
             <SimpleBar style={{ maxHeight: 300 }}>
               <ul className="list-disc pl-5 mb-4">
-                {ngWords.map((word) => (
-                  <li key={word.id}>{word.word}</li>
+                {ngWords.map((word, index) => (
+                  <li key={`${index}-${word}`}>{word}</li>
                 ))}
               </ul>
             </SimpleBar>

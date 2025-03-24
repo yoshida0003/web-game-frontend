@@ -1,4 +1,4 @@
-`use client`;
+"use client";
 import Auth from "./auth";
 
 const AuthPage = () => {

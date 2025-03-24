@@ -22,7 +22,7 @@ const AdminPage = () => {
 
     const verifyToken = async () => {
       try {
-        const res = await fetch("http://localhost:3001/api/verify-token", {
+        const res = await fetch("https://game.yospace.org/api/verify-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

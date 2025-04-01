@@ -1,0 +1,44 @@
+.bg-2EB1F0 {
+  background-color: #2EB1F0;
+}
+
+.bg-FAF9FB {
+  background-color: #FAF9FB;
+}
+
+.fc-2EB1F0 {
+  color: #2EB1F0;
+}
+
+.fc-FAF9FB {
+  color: #FAF9FB;
+}
+
+.fc-6B8AA0 {
+  color: #6B8AA0;
+}
+
+.border-FAF9FB {
+  border: 2px solid #FAF9FB;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+.animate-fade {
+  animation: fadeInOut 2s ease-in-out;
+}

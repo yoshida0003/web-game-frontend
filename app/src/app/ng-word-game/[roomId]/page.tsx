@@ -19,7 +19,7 @@ interface User {
   isReady?: boolean;
 }
 
-const socket = io("http://localhost:3001", {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -45,7 +45,7 @@ const NGWordGamePage = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
         setTimerDuration(response.data.timerDuration || 300); // サーバーからタイマーの初期値を取得
@@ -179,7 +179,7 @@ const NGWordGamePage = () => {
 
   const handleToggleReady = async () => {
     try {
-      await axios.post("http://localhost:3001/api/toggle-ready", {
+      await axios.post("https://game.yospace.org/api/toggle-ready", {
         roomId,
         userId,
       });
@@ -190,7 +190,7 @@ const NGWordGamePage = () => {
 
   const handleStartGame = async () => {
     try {
-      await axios.post("http://localhost:3001/api/start-ng-word-game", {
+      await axios.post("https://game.yospace.org/api/start-ng-word-game", {
         roomId,
       });
     } catch (error) {
@@ -200,7 +200,7 @@ const NGWordGamePage = () => {
 
   const handleWordClick = async (targetUserId: string) => {
     try {
-      await axios.post("http://localhost:3001/api/click-word", {
+      await axios.post("https://game.yospace.org/api/click-word", {
         roomId,
         targetUserId,
       });
@@ -211,7 +211,7 @@ const NGWordGamePage = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post("http://localhost:3001/api/leave-room", {
+      await axios.post("https://game.yospace.org/api/leave-room", {
         roomId,
         userId,
       });

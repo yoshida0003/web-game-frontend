@@ -14,7 +14,7 @@ const NGWordGame = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/create-room",
+        "https://game.yospace.org/api/create-room",
         {
           roomName,
           username,
@@ -33,7 +33,7 @@ const NGWordGame = () => {
   const handleJoinRoom = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3001/api/join-room", {
+      const response = await axios.post("https://game.yospace.org/api/join-room", {
         roomName,
         username,
         gameType: "ng-word", // gameTypeを追加

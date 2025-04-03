@@ -19,7 +19,7 @@ const TimerSettings: React.FC<TimerSettingsProps> = ({
 
   const handleSetTimer = async (duration: number) => {
     try {
-      await axios.post("http://localhost:3001/api/set-timer", {
+      await axios.post("https://game.yospace.org/api/set-timer", {
         roomId,
         userId,
         timerDuration: duration,

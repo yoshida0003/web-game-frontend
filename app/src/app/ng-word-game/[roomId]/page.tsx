@@ -51,7 +51,6 @@ const NGWordGamePage = () => {
         setTimerDuration(response.data.timerDuration || 300); // サーバーからタイマーの初期値を取得
         setCountdown(response.data.timerDuration);
       } catch (error) {
-        console.error("Error fetching room data:", error);
       }
     };
 
@@ -62,7 +61,6 @@ const NGWordGamePage = () => {
 
     // サーバーからの通知をリッスン
     socket.on("user-joined", (user) => {
-      console.log("user-joined event received:", user);
       setUsers((prevUsers) => {
         if (prevUsers.some((existingUser) => existingUser.id === user.userId)) {
           return prevUsers;
@@ -72,11 +70,9 @@ const NGWordGamePage = () => {
           { id: user.userId, username: user.username, points: 0 },
         ];
       });
-      console.log(`${user.username}さんが入室しました。`);
     });
 
-    socket.on("user-left", ({ userId, username }) => {
-      console.log(`${username}さんが退出しました。`);
+    socket.on("user-left", ({ userId }) => {
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
     });
 
@@ -86,7 +82,6 @@ const NGWordGamePage = () => {
     });
 
     socket.on("user-ready-updated", (data) => {
-      console.log("受信した user-ready-updated データ:", data);
 
       const updatedUsers = Array.isArray(data.users) ? data.users : [data];
 
@@ -106,7 +101,6 @@ const NGWordGamePage = () => {
 
     socket.on("all-users-ready", ({ allReady }) => {
       setAllReady(allReady); // 全員が準備完了かどうかを更新
-      console.log(`全員準備完了: ${allReady}`);
     });
 
     socket.on("ng-word-game-started", (data) => {
@@ -130,7 +124,6 @@ const NGWordGamePage = () => {
     socket.on("timer-updated", ({ timerDuration }) => {
       setTimerDuration(timerDuration); // タイマーの設定時間を更新
       setCountdown(timerDuration); // カウントダウンの初期値を設定
-      console.log(`タイマーの設定が変更されました: ${timerDuration}秒`);
     });
 
     // サーバーからタイマーの現在のカウントダウン値を受信
@@ -144,7 +137,6 @@ const NGWordGamePage = () => {
     });
 
     socket.on("game-result", (data) => {
-      console.log("🔹 game-result イベントを受信:", data);
       setResultMessage(data.message); // 結果メッセージを設定
       setShowModal(true); // モーダルを表示
     });
@@ -155,8 +147,6 @@ const NGWordGamePage = () => {
 
     // クライアント側のSocket.ioリスナー
     socket.on("word-revealed", (data) => {
-      console.log(data.message); // ログに通知を表示
-      alert(data.message); // 必要に応じてアラートを表示
 
       // ポイントを更新
       setUsers((prevUsers) =>
@@ -168,7 +158,6 @@ const NGWordGamePage = () => {
 
     // サーバーからフェードインするワードを受信
     socket.on("word-revealed-to-self", (data) => {
-      console.log("🔹 word-revealed-to-self イベントを受信:", data);
       setRevealedWord(data.word); // フェードインするワードを設定
     });
 
@@ -205,7 +194,7 @@ const NGWordGamePage = () => {
         roomId,
       });
     } catch (error) {
-      console.error("スターとエラー:", error);
+      console.error("スタートエラー:", error);
     }
   };
 

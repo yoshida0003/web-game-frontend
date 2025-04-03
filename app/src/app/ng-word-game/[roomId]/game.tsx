@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, Typography } from "@mui/material";
-import { io } from "socket.io-client";
 
 interface User {
   id: string;
@@ -16,14 +15,8 @@ interface GameProps {
   revealedWord: string | null;
 }
 
-const socket = io("http://localhost:3001", {
-  withCredentials: true,
-  transports: ["websocket", "polling"],
-});
-
 const Game: React.FC<GameProps> = ({ users, userId, onWordClick, revealedWord }) => {
   const [showWord, setShowWord] = useState(false); // フェードイン・アウトの状態
-  const [wordToShow, setWordToShow] = useState<string | null>(null); // 表示するワード
   
   useEffect(() => {
     if (revealedWord) {
@@ -34,15 +27,6 @@ const Game: React.FC<GameProps> = ({ users, userId, onWordClick, revealedWord })
     }
   }, [revealedWord]);
 
-  const handleWordReveal = (word: string) => {
-    console.log("🔹 handleWordReveal 呼び出し:", word);
-    setWordToShow(word); // 表示するワードを設定
-    setShowWord(true); // フェードイン開始
-    setTimeout(() => {
-      setShowWord(false); // フェードアウト開始
-    }, 2000); // 2秒後にフェードアウト
-  };
-  
   return (
     <div className="container mx-auto p-4">
       {/* 自分の情報を表示 */}

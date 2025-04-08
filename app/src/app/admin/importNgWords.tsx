@@ -25,21 +25,14 @@ const ImportNgWords = () => {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          console.log("Parsed CSV data:", results.data); // ログ出力
-
-          // CSVの最初の行のキーを取得
           const firstRow = results.data[0];
           if (!firstRow) {
             alert("CSVが空です");
             return;
           }
 
-          const columnName = Object.keys(firstRow)[0]; // 最初のカラム名を取得
-          console.log("Detected column name:", columnName);
-
-          const words = results.data.map((row) => row[columnName]); // 動的にカラム名を取得
-          console.log("Extracted words:", words); // 取得した単語リストをログ出力
-
+          const columnName = Object.keys(firstRow)[0];
+          const words = results.data.map((row) => row[columnName]);
           setNgWords(words);
           setShowModal(true);
         },
@@ -52,7 +45,7 @@ const ImportNgWords = () => {
 
   const handleConfirm = async () => {
     try {
-      const token = localStorage.getItem("token"); // ローカルストレージからトークンを取得
+      const token = localStorage.getItem("token");
       if (!token) {
         alert("認証トークンが見つかりません。ログインしてください。");
         return;
@@ -64,7 +57,7 @@ const ImportNgWords = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: token || "", // トークンをヘッダーに追加
+            Authorization: token || "",
           },
         }
       );
@@ -85,19 +78,24 @@ const ImportNgWords = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
-      <button
-        onClick={handleFileUpload}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        追加
-      </button>
+    <div className="bg-white shadow-md rounded p-6">
+      <h2 className="text-xl font-bold mb-4 text-gray-700">
+        NGワードのインポート
+      </h2>
+      <div className="space-y-4">
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFileChange}
+          className="block w-full text-gray-700 border border-gray-300 rounded py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={handleFileUpload}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          CSVをアップロード
+        </button>
+      </div>
 
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -112,10 +110,10 @@ const ImportNgWords = () => {
                 ))}
               </ul>
             </SimpleBar>
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-2">
               <button
                 onClick={handleConfirm}
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2"
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
               >
                 確定
               </button>

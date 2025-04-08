@@ -1,21 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import AddNgWord from "./addNgWord";
 import ImportNgWords from "./importNgWords";
 
 const AdminPage = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(true); // ローディング状態を追加
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("🔍 JWTトークン:", token); // JWTトークンをログに出力
-
     if (!token) {
-      console.log(
-        "❌ トークンが見つかりません。ログインページにリダイレクトします。"
-      );
       router.push("/");
       return;
     }
@@ -31,25 +26,18 @@ const AdminPage = () => {
         });
 
         const data = await res.json();
-        console.log("🔍 サーバーからのレスポンス:", data); // サーバーからのレスポンスをログに出力
-
         if (!res.ok || !data.decoded.isAdmin) {
-          console.log(
-            "❌ 管理者権限がありません。ログインページにリダイレクトします。"
-          );
           router.push("/");
         } else {
-          setLoading(false); // 認証が成功したらローディング状態を解除
+          setLoading(false);
         }
       } catch (error) {
-        console.error("❌ トークンの検証中にエラーが発生しました:", error);
         router.push("/");
       }
     };
 
     verifyToken();
 
-    // ページを閉じたときにトークンを削除
     const handleBeforeUnload = () => {
       localStorage.removeItem("token");
     };
@@ -61,16 +49,46 @@ const AdminPage = () => {
     };
   }, [router]);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // トークンを削除
+    router.back(); // 前のページにリダイレクト
+  };
+
   if (loading) {
-    return <div>Loading...</div>; // ローディング中の表示
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-xl font-bold text-blue-600">Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>管理者ページ</h1>
-      <p>NGワードの追加</p>
-      <AddNgWord />
-      <ImportNgWords />
+    <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-blue-600 text-center">
+        管理者ページ
+      </h1>
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          ログアウト
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white shadow-md rounded p-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-700">
+            NGワードの追加
+          </h2>
+          <AddNgWord />
+        </div>
+        <div className="bg-white shadow-md rounded p-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-700">
+            NGワードのインポート
+          </h2>
+          <ImportNgWords />
+        </div>
+      </div>
     </div>
   );
 };

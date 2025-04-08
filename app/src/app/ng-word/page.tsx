@@ -1,14 +1,28 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
 const NGWordGame = () => {
-  const [username, setUsername] = useState<string>("");
-  const [roomName, setRoomName] = useState<string>("");
-  const [tab, setTab] = useState<"create" | "join">("create");
+  const [username, setUsername] = useState<string>(""); // ユーザー名
+  const [roomName, setRoomName] = useState<string>(""); // 部屋名
+  const [isGuest, setIsGuest] = useState<boolean>(false); // ゲストモード
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // ログイン状態
+  const [tab, setTab] = useState<"create" | "join">("create"); // タブの状態
   const router = useRouter();
+
+  useEffect(() => {
+    // ログイン済みのユーザー情報を取得
+    const storedNickname = localStorage.getItem("nickname");
+
+    if (storedNickname) {
+      setUsername(storedNickname);
+      setIsLoggedIn(true); // ログイン状態を設定
+    } else {
+      setIsGuest(true); // ログイン情報がない場合はゲストモード
+    }
+  }, []);
 
   const handleCreateRoom = async (e: FormEvent) => {
     e.preventDefault();
@@ -18,13 +32,14 @@ const NGWordGame = () => {
         {
           roomName,
           username,
-          gameType: "ng-word", // gameTypeを追加
+          gameType: "ng-word",
+          userId: isGuest ? undefined : localStorage.getItem("userId"), // ログイン済みのユーザーは自分のuserIdを送信
         }
       );
       const { roomId, userId } = response.data;
       router.push(
         `/ng-word-game/${roomId}?userId=${userId}&username=${username}`
-      ); // usernameをクエリパラメータに追加
+      );
     } catch (error) {
       console.error("Error creating room:", error);
     }
@@ -36,12 +51,13 @@ const NGWordGame = () => {
       const response = await axios.post("https://game.yospace.org/api/join-room", {
         roomName,
         username,
-        gameType: "ng-word", // gameTypeを追加
+        gameType: "ng-word",
+        userId: isGuest ? undefined : localStorage.getItem("userId"), // ログイン済みのユーザーは自分のuserIdを送信
       });
       const { roomId, userId } = response.data;
       router.push(
         `/ng-word-game/${roomId}?userId=${userId}&username=${username}`
-      ); // usernameをクエリパラメータに追加
+      );
     } catch (error) {
       console.error("Error joining room:", error);
       if (axios.isAxiosError(error) && error.response) {
@@ -52,15 +68,52 @@ const NGWordGame = () => {
     }
   };
 
+  const toggleGuestMode = () => {
+    setIsGuest(!isGuest);
+    if (!isGuest) {
+      // ゲストモードに切り替えた場合、ユーザー名をリセット
+      setUsername("");
+    } else {
+      // ログインモードに戻した場合、ローカルストレージから情報を再取得
+      const storedNickname = localStorage.getItem("nickname");
+      if (storedNickname) {
+        setUsername(storedNickname);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
+      {isLoggedIn && (
+        <div className="mb-4">
+          <button
+            onClick={toggleGuestMode}
+            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+          >
+            {isGuest ? "ログインモードに切り替え" : "ゲストモードに切り替え"}
+          </button>
+        </div>
+      )}
+      {isGuest && (
+        <form className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            ニックネーム:
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </label>
+        </form>
+      )}
       <form className="mb-4">
         <label className="block text-gray-700 text-sm font-bold mb-2">
-          ユーザーネーム:
+          部屋の名前:
           <input
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={roomName}
+            onChange={(e) => setRoomName(e.target.value)}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </label>
@@ -88,52 +141,30 @@ const NGWordGame = () => {
         </button>
       </div>
       {tab === "create" && (
-        <div>
-          <form
-            onSubmit={handleCreateRoom}
-            className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        <form
+          onSubmit={handleCreateRoom}
+          className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        >
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              部屋の名前を入力:
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-            </label>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              作成
-            </button>
-          </form>
-        </div>
+            作成
+          </button>
+        </form>
       )}
       {tab === "join" && (
-        <div>
-          <form
-            onSubmit={handleJoinRoom}
-            className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        <form
+          onSubmit={handleJoinRoom}
+          className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        >
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              部屋の名前を入力:
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-            </label>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              参加
-            </button>
-          </form>
-        </div>
+            参加
+          </button>
+        </form>
       )}
     </div>
   );

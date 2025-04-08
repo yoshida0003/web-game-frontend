@@ -15,7 +15,7 @@ const TimerSettings: React.FC<TimerSettingsProps> = ({
   timerDuration,
   onTimerUpdate,
 }) => {
-  const durations = [10, 300, 480, 600, 900, 1800]; // 秒単位の時間設定
+  const durations = [300, 480, 600, 900, 1800]; // 秒単位の時間設定
 
   const handleSetTimer = async (duration: number) => {
     try {

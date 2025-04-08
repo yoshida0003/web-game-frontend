@@ -33,6 +33,7 @@ const AdminPage = () => {
         }
       } catch (error) {
         router.push("/");
+        console.log(error);
       }
     };
 

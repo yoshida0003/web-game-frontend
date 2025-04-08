@@ -51,6 +51,7 @@ const NGWordGamePage = () => {
         setTimerDuration(response.data.timerDuration || 300); // サーバーからタイマーの初期値を取得
         setCountdown(response.data.timerDuration);
       } catch (error) {
+        console.log(error);
       }
     };
 
@@ -313,7 +314,7 @@ const NGWordGamePage = () => {
             時間設定
           </Button>
         )}
-        {users
+        {!gameStarted && users
           .filter((user) => user.id !== users[0]?.id && user.id === userId) // 条件に該当するユーザーのみ処理
           .map((user) => (
             <Button

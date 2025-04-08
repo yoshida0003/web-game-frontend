@@ -270,7 +270,7 @@ const GamePage: React.FC<GamePageProps> = ({
     try {
       // まず移動が合法かどうかをチェック
       const validateResponse = await axios.post(
-        "https://game.yospace.org/api/shogi/validate-move",
+        "http://localhost:3001/api/shogi/validate-move",
         {
           roomId,
           userId,
@@ -299,7 +299,7 @@ const GamePage: React.FC<GamePageProps> = ({
 
         // 実際に移動を行う
         const response = await axios.post(
-          "https://game.yospace.org/api/shogi/move-piece",
+          "http://localhost:3001/api/shogi/move-piece",
           {
             roomId,
             userId,
@@ -340,7 +340,7 @@ const GamePage: React.FC<GamePageProps> = ({
   const resign = async () => {
     try {
       const response = await axios.post(
-        "https://game.yospace.org/api/shogi/resign",
+        "http://localhost:3001/api/shogi/resign",
         {
           roomId,
           userId,

@@ -9,7 +9,7 @@ import "./shogi.css";
 import GamePage from "./game";
 import "./shogi.css";
 
-const socket = io("http://localhost:3001", {
+const socket = io("wss://game.yospace.org", {
   withCredentials: true,
   transports: ["websocket", "polling"],
 });
@@ -42,7 +42,7 @@ const ShogiGame = () => {
     const fetchRoomData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/room/${roomId}`
+          `https://game.yospace.org/api/room/${roomId}`
         );
         setUsers(response.data.users);
       } catch (error) {
@@ -136,7 +136,7 @@ const ShogiGame = () => {
 
   const handleLeaveRoom = async () => {
     try {
-      await axios.post("http://localhost:3001/api/leave-room", {
+      await axios.post("https://game.yospace.org/api/leave-room", {
         roomId,
         userId,
       });
@@ -149,7 +149,7 @@ const ShogiGame = () => {
 
   const handleStartGame = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/start-game`, { roomId });
+      await axios.post(`https://game.yospace.org/api/start-game`, { roomId });
     } catch (error) {
       console.error("Error starting game:", error);
     }

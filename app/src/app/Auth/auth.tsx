@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,10 +11,12 @@ const Auth = () => {
   const router = useRouter();
 
   interface AuthResponse {
+    userId?: string; // userIdを追加
     nickname?: string;
     message?: string;
     isAdmin?: boolean;
     token: string;
+    shogiRate: number;
   }
 
   interface AuthRequestBody {
@@ -25,9 +28,11 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const url = isLogin
-      ? "https://game.yospace.org/api/login"
-      : "https://game.yospace.org/api/register";
-    const body: AuthRequestBody = isLogin ? { email, password } : { email, password, nickname };
+      ? "http://localhost:3001/api/login"
+      : "http://localhost:3001/api/register";
+    const body: AuthRequestBody = isLogin
+      ? { email, password }
+      : { email, password, nickname };
 
     const res: Response = await fetch(url, {
       method: "POST",
@@ -38,12 +43,20 @@ const Auth = () => {
     });
 
     const data: AuthResponse = await res.json();
+    console.log("サーバーからのレスポンス:", data); // ここで確認
+
     if (res.ok) {
+      console.log(data.userId)
+      localStorage.setItem("nickname", data.nickname || ""); // ニックネームを保存
+      localStorage.setItem("token", data.token); // JWTを保存
+      if (data.userId) {
+        localStorage.setItem("userId", data.userId); // userIdを保存
+      }
+      localStorage.setItem("shogiRate", data.shogiRate.toString());
       if (isLogin && data.isAdmin) {
-        localStorage.setItem("token", data.token) // JWTを保存
         router.push("/admin");
       } else {
-        alert(isLogin ? `こんにちは！, ${data.nickname}` : "新規登録成功!");
+        router.push("/"); // ホーム画面にリダイレクト
       }
     } else {
       console.error("❌ フロントエンドでエラー発生:", data.message);
@@ -52,41 +65,63 @@ const Auth = () => {
   };
 
   return (
-    <div>
-      <h1>{isLogin ? "ログイン" : "新規登録"}</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email:</label>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <h1 className="text-3xl font-bold mb-6 text-blue-600">
+        {isLogin ? "ログイン" : "新規登録"}
+      </h1>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-full max-w-sm"
+      >
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Email:
+          </label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
-        <div>
-          <label>Password:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Password:
+          </label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
         {!isLogin && (
-          <div>
-            <label>Nickname:</label>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Nickname:
+            </label>
             <input
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               required
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             />
           </div>
         )}
-        <button type="submit">{isLogin ? "ログイン" : "新規登録"}</button>
+        <button
+          type="submit"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+        >
+          {isLogin ? "ログイン" : "新規登録"}
+        </button>
       </form>
-      <button onClick={() => setIsLogin(!isLogin)}>
+      <button
+        onClick={() => setIsLogin(!isLogin)}
+        className="text-blue-500 hover:text-blue-700 font-bold"
+      >
         {isLogin ? "新規登録はこちら" : "ログインはこちら"}
       </button>
     </div>
